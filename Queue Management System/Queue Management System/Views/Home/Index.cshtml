@@ -1,3 +1,231 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model List<Service>
+@using Queue_Management_System.Helpers
+@{
+    ViewData["Title"] = "Check In";
+    Layout = "_LayoutKiosk";
 }
+
+<!-- Main Container -->
+<div class="min-vh-100 d-flex flex-column justify-content-center align-items-center bg-gradient-light p-4">
+
+    <!-- Header -->
+    <div class="text-center py-5">
+        <h1 class="display-4 fw-bold text-primary mb-2">Hospital Queue System</h1>
+        <p class="text-muted fs-5">Select your service to get a ticket quickly</p>
+    </div>
+
+    <!-- Services Grid -->
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+            @foreach (var service in Model)
+            {
+                <!-- Dynamic Service Card -->
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="service-card" onclick="selectService('@service.Name', '@service.PrefixCode')">
+                        <div class="icon @ServiceIconHelper.GetColorClass(service.PrefixCode) text-white">
+                            <i class="fas @ServiceIconHelper.GetIconClass(service.PrefixCode)"></i>
+                        </div>
+                        <div class="service-name">@service.Name</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-body text-center p-5" id="modalContent">
+                <!-- Initial content -->
+                <div id="confirmStep">
+                    <i class="fas fa-check-circle text-primary mb-3" style="font-size: 4rem;"></i>
+                    <h4 class="mb-3">You selected:</h4>
+                    <h3 class="fw-bold text-primary mb-4" id="selectedService"></h3>
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-primary btn-lg" onclick="printTicket()">
+                            <i class="fas fa-print me-2"></i> Print Ticket
+                        </button>
+                        <button class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Printing step -->
+                <div id="printingStep" style="display: none;">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h4 class="mb-0">Printing...</h4>
+                </div>
+
+                <!-- Success step -->
+                <div id="successStep" style="display: none;">
+                    <i class="fas fa-check-circle text-success mb-3" style="font-size: 4rem;"></i>
+                    <h3 class="fw-bold text-success">Thank you!</h3>
+                    <p class="text-muted mb-0">Your ticket has been printed</p>
+                </div>
+
+                <!-- Error step -->
+                <div id="errorStep" style="display: none;">
+                    <i class="fas fa-exclamation-circle text-danger mb-3" style="font-size: 4rem;"></i>
+                    <h3 class="fw-bold text-danger">Error</h3>
+                    <p class="text-muted mb-3" id="errorMessage">Something went wrong. Please try again.</p>
+                    <button class="btn btn-primary btn-lg" data-bs-dismiss="modal" onclick="resetModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+
+    .bg-gradient-light {
+        background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+    }
+
+    .service-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 30px 0;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .service-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .service-card .icon {
+        font-size: 2.5rem;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .service-card:hover .icon {
+        transform: scale(1.15);
+    }
+
+    .service-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #333;
+        transition: color 0.3s ease;
+    }
+
+    .service-card:hover .service-name {
+        color: #007bff;
+    }
+
+    .bg-purple {
+        background-color: #6f42c1 !important;
+    }
+
+    .modal-content {
+        border-radius: 20px;
+    }
+</style>
+
+<!-- Scripts -->
+<script>
+    let selectedServiceName = '';
+    let selectedPrefix = '';
+    let modalInstance = null;
+
+    function selectService(serviceName, prefix) {
+        selectedServiceName = serviceName;
+        selectedPrefix = prefix;
+
+        // Update modal content
+        document.getElementById('selectedService').textContent = serviceName;
+
+        // Reset modal to initial state
+        resetModal();
+
+        // Show modal
+        modalInstance = new bootstrap.Modal(document.getElementById('confirmModal'));
+        modalInstance.show();
+    }
+
+    function resetModal() {
+        document.getElementById('confirmStep').style.display = 'block';
+        document.getElementById('printingStep').style.display = 'none';
+        document.getElementById('successStep').style.display = 'none';
+        document.getElementById('errorStep').style.display = 'none';
+    }
+
+    function printTicket() {
+        // Hide confirm step
+        document.getElementById('confirmStep').style.display = 'none';
+
+        // Show printing step
+        document.getElementById('printingStep').style.display = 'block';
+
+        // Make actual API call to generate ticket
+        fetch('@Url.Action("GenerateTicket", "Home")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `serviceName=${encodeURIComponent(selectedServiceName)}&prefix=${encodeURIComponent(selectedPrefix)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide printing step
+            document.getElementById('printingStep').style.display = 'none';
+
+            if (data.success) {
+                // Auto-print the PDF if URL is provided
+                if (data.pdfUrl) {
+                    const printWindow = window.open(data.pdfUrl, '_blank');
+                    if (printWindow) {
+                        printWindow.onload = function() {
+                            printWindow.print();
+                        };
+                    }
+                }
+
+                // Show success
+                document.getElementById('successStep').style.display = 'block';
+
+                // Redirect to home after 2 seconds
+                setTimeout(() => {
+                    modalInstance.hide();
+                    window.location.href = '@Url.Action("Index", "Home")';
+                }, 2000);
+            } else {
+                // Show error
+                document.getElementById('errorMessage').textContent = data.message || 'Failed to generate ticket. Please try again.';
+                document.getElementById('errorStep').style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+
+            // Hide printing step
+            document.getElementById('printingStep').style.display = 'none';
+
+            // Show error
+            document.getElementById('errorMessage').textContent = 'Network error. Please check your connection and try again.';
+            document.getElementById('errorStep').style.display = 'block';
+        });
+    }
+</script>
