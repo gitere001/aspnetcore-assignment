@@ -71,7 +71,25 @@ namespace Queue_Management_System.Data.Repositories
 				new NpgsqlParameter("@password_hash", user.PasswordHash),
 				new NpgsqlParameter("@role", user.Role));
 		}
-		
+		public async Task<List<User>> GetAllUsers()
+		{
+			var sql = @"
+        SELECT id, username, email, role, service_point_id, created_at
+        FROM users
+        ORDER BY created_at DESC;
+    ";
+
+			return await _db.ExecuteQueryAsync(sql, reader => new User
+			{
+				Id = reader.GetInt32(0),
+				Username = reader.GetString(1),
+				Email = reader.GetString(2),
+				Role = reader.GetString(3),
+				ServicePointId = reader.IsDBNull(4) ? null : reader.GetInt32(4),
+				
+			});
+		}
+
 
 
 

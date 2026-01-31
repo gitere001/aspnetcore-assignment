@@ -1,0 +1,20 @@
+@model Queue_Management_System.ViewComponents.AlertViewModel
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div id="alert-component" class="alert alert-@Model.Type position-fixed top-0 start-50 translate-middle-x mt-3 auto-hide" style="z-index:1050; min-width:300px;">
+        @Model.Message
+    </div>
+
+    <script>
+        // Auto-hide itself after 2 seconds
+        setTimeout(() => {
+            const el = document.getElementById('alert-component');
+            if (el) {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 500);
+            }
+        }, 2000);
+    </script>
+}

@@ -32,7 +32,8 @@ namespace Queue_Management_System.Controllers
 
 			if (user == null)
 			{
-				ViewBag.Error = "Invalid username/email or password";
+				ViewBag.UsernameOrEmail = usernameOrEmail; // Preserve username
+				TempData["ErrorMessage"] = "Invalid username/email or password";
 				return View();
 			}
 
@@ -40,7 +41,8 @@ namespace Queue_Management_System.Controllers
 			bool validPassword = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
 			if (!validPassword)
 			{
-				ViewBag.Error = "Invalid username/email or password";
+				ViewBag.UsernameOrEmail = usernameOrEmail; // Preserve username
+				TempData["ErrorMessage"] = "Invalid username/email or password";
 				return View();
 			}
 
@@ -60,10 +62,10 @@ namespace Queue_Management_System.Controllers
 			// 5. Sign in user (creates authentication cookie)
 			await HttpContext.SignInAsync("Cookies", principal);
 
-			Console.WriteLine($"[DEBUG] Login successful! UserId={user.Id}, Role={user.Role}");
 
 			if (user.Role == "Admin")
 			{
+
 				return RedirectToAction("Dashboard", "Admin");
 			}
 			else if (user.Role == "Staff") // ADD THIS
@@ -76,39 +78,10 @@ namespace Queue_Management_System.Controllers
 			}
 		}
 
-		[HttpPost]
-		public async Task<IActionResult> Register(string username, string email, string password)
-		{
-			// 1. Check if user already exists
-			var existingUser = await _userRepository.GetUserByUsernameOrEmail(username);
-			if (existingUser != null)
-			{
-				ViewBag.Error = "Username already exists";
-				return View();
-			}
 
-			// 2. Hash the password
-			string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
-
-			// 3. Create User object
-			var newUser = new User
-			{
-				Username = username,
-				Email = email,
-				PasswordHash = hashedPassword,
-				Role = "Admin" // or "User" depending on what you want
-			};
-
-			// 4. Add user to DB
-			int userId = await _userRepository.AddUser(newUser);
-			Console.WriteLine($"[DEBUG] New user registered with Id={userId}");
-
-
-
-			return RedirectToAction("Index", "Home");
-		}
 
 		[HttpPost]
+		[ValidateAntiForgeryToken]
 		public async Task<IActionResult> Logout()
 		{
 			await HttpContext.SignOutAsync("Cookies");
