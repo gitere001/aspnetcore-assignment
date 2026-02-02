@@ -4,15 +4,15 @@ namespace Queue_Management_System.Helpers
 	{
 		private static readonly Dictionary<string, (string IconClass, string ColorClass)> ServiceIconMap = new()
 		{
-			["D"] = ("fa-user-doctor", "bg-primary"),
-			["L"] = ("fa-vials", "bg-success"),
-			["P"] = ("fa-pills", "bg-warning"),
-			["R"] = ("fa-file-invoice", "bg-info"),
-			["E"] = ("fa-ambulance", "bg-danger"),
-			["X"] = ("fa-x-ray", "bg-secondary"),
-			["U"] = ("fa-heart-pulse", "bg-purple"),
-			["B"] = ("fa-credit-card", "bg-dark"),
-			
+			["DOC-"] = ("fa-user-doctor", "bg-primary"),
+			["LAB-"] = ("fa-vials", "bg-success"),
+			["PHAR-"] = ("fa-pills", "bg-warning"),
+			["REG-"] = ("fa-file-invoice", "bg-info"),
+			["EMER-"] = ("fa-ambulance", "bg-danger"),
+			["XRAY-"] = ("fa-x-ray", "bg-secondary"),
+			["USND-"] = ("fa-heart-pulse", "bg-purple"),
+			["BILL-"] = ("fa-credit-card", "bg-dark"),
+
 		};
 
 		public static string GetIconClass(string prefixCode)

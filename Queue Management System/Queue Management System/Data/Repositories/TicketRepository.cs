@@ -26,7 +26,8 @@ namespace Queue_Management_System.Data.Repositories
                     called_at TIMESTAMP,
                     finished_at TIMESTAMP,
                     waiting_time_seconds INTEGER,
-                    service_time_seconds INTEGER
+                    service_time_seconds INTEGER,
+                    served_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
                 );
             ";
 
@@ -108,5 +109,103 @@ namespace Queue_Management_System.Data.Repositories
 				ServiceTimeSeconds = row["service_time_seconds"] as int?
 			};
 		}
+
+		public async Task<List<Ticket>> GetTicketsByServicePoint(int servicePointId)
+		{
+			var sql = @"
+        SELECT
+            t.id,
+            t.ticket_number,
+            t.status,
+            t.created_at,
+			t.service_id
+        FROM tickets t
+        JOIN service_points sp ON sp.id = @servicePointId
+        WHERE t.service_id = sp.service_id
+          AND t.status IN ('Waiting')
+       ORDER BY t.created_at ASC;
+    ";
+
+			return await _db.ExecuteQueryAsync(sql,
+				reader => new Ticket
+				{
+					Id = reader.GetInt32(0),
+					TicketNumber = reader.GetString(1),
+					Status = reader.GetString(2),
+					CreatedAt = reader.GetDateTime(3),
+					ServiceId = reader.GetInt32(4)
+				},
+				new NpgsqlParameter("@servicePointId", servicePointId)
+			);
+		}
+
+	public async Task<Dictionary<string, object>?> CallNextTicket(int servicePointId, int staffUserId, string? noShowTicketNumber = null)
+{
+    try
+    {
+        // 1. If noShowTicketNumber provided, mark it as NoShow
+        if (!string.IsNullOrEmpty(noShowTicketNumber))
+        {
+            var noShowSql = @"
+                UPDATE tickets
+                SET status = 'NoShow',
+                    finished_at = NOW(),
+                    service_time_seconds = COALESCE(service_time_seconds, 0)
+                WHERE ticket_number = @ticketNumber
+                  AND service_point_id = @servicePointId
+                  AND status = 'Called';
+            ";
+
+            await _db.ExecuteNonQueryAsync(noShowSql,
+                new NpgsqlParameter("@ticketNumber", noShowTicketNumber),
+                new NpgsqlParameter("@servicePointId", servicePointId));
+        }
+
+        // 2. Find and update the next waiting ticket
+        var sql = @"
+            WITH next_ticket AS (
+                SELECT t.id
+                FROM tickets t
+                JOIN service_points sp ON sp.service_id = t.service_id
+                WHERE sp.id = @servicePointId
+                  AND t.status = 'Waiting'
+                  AND t.service_point_id IS NULL
+                ORDER BY t.created_at ASC
+                LIMIT 1
+                FOR UPDATE SKIP LOCKED
+            )
+            UPDATE tickets t
+            SET status = 'Called',
+                service_point_id = @servicePointId,
+                called_at = NOW(),
+                served_by_user_id = @staffUserId,
+                waiting_time_seconds = EXTRACT(EPOCH FROM (NOW() - t.created_at))
+            FROM next_ticket nt
+            WHERE t.id = nt.id
+            RETURNING
+                t.ticket_number,
+                EXTRACT(EPOCH FROM (NOW() - t.created_at)) as wait_seconds;
+        ";
+
+        var result = await _db.ExecuteReaderAsync(sql,
+            new NpgsqlParameter("@servicePointId", servicePointId),
+            new NpgsqlParameter("@staffUserId", staffUserId));
+
+        if (result.Count == 0) return null;
+
+        var row = result[0];
+
+
+        return new Dictionary<string, object>
+        {
+            ["ticketNumber"] = row["ticket_number"].ToString()!,
+          
+        };
+    }
+    catch
+    {
+        throw;
+    }
+}
 	}
 }

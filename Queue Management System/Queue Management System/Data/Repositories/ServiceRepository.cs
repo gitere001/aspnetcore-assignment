@@ -21,7 +21,7 @@ namespace Queue_Management_System.Data.Repositories
                 CREATE TABLE IF NOT EXISTS services (
                     id SERIAL PRIMARY KEY,
                     name VARCHAR(100) NOT NULL,
-                    prefix_code VARCHAR(2) NOT NULL,
+                    prefix_code VARCHAR(5) NOT NULL,
                     created_at TIMESTAMP DEFAULT NOW()
                 );
             ";
@@ -121,6 +121,30 @@ namespace Queue_Management_System.Data.Repositories
             }
 
             return service.Id;
+        }
+
+        // In ServiceRepository.cs
+        public async Task<Service?> GetServiceById(int id)
+        {
+            var sql = @"
+        SELECT id, name, prefix_code, created_at
+        FROM services
+        WHERE id = @id;
+    ";
+
+            var services = await _db.ExecuteQueryAsync(
+                sql,
+                reader => new Service
+                {
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1),
+                    PrefixCode = reader.GetString(2),
+                    CreatedAt = reader.GetDateTime(3)
+                },
+                new NpgsqlParameter("@id", id)
+            );
+
+            return services.FirstOrDefault();
         }
     }
 }

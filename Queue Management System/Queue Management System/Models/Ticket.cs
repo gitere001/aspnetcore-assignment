@@ -26,5 +26,7 @@ namespace Queue_Management_System.Models
         public int? WaitingTimeSeconds { get; set; } // CalledAt - CreatedAt
 
         public int? ServiceTimeSeconds { get; set; } // FinishedAt - CalledAt
+        public int? ServedByUserId { get; set; } // Which staff member served the ticket
+        public string? ServedByUsername { get; set; } // Staff username who served the ticket
     }
 }

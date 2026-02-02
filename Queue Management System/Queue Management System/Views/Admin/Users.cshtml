@@ -122,112 +122,154 @@
                                     <div class="d-flex align-items-center">
                                         <div class="symbol symbol-40px me-3">
                                             <div class="symbol-label bg-light-primary">
-                                                <span class="text-primary fw-bold">@user.Username.Substring(0,
-                                                                                                    1).ToUpper()</span>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div class="fw-bold">@user.Username</div>
+                                                <span class="text-primary fw-bold">@user.Username.Substring(0, 1).ToUpper()</span>
                                             </div>
                                         </div>
-                                    </td>
-                                    <td>@user.Email</td>
-                                    <td>
-                                        <span
-                                            class="badge @(user.Role == "Admin" ? "bg-danger" : user.Role == "Staff" ? "bg-info" : "bg-secondary")">
-                                            @user.Role
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @if (user.ServicePointId.HasValue)
-                                        {
-                                            <span class="badge bg-success">Assigned</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary">Not Assigned</span>
-                                        }
-                                    </td>
-                                   <td>
-    <div class="btn-group" role="group">
-        <button class="btn btn-sm btn-outline-primary" title="Edit">
-            <i class="fas fa-edit"></i>
-        </button>
-        <button class="btn btn-sm btn-outline-info" title="Assign">
-            Assign
-        </button>
-        <button class="btn btn-sm btn-outline-danger" title="Delete">
-            <i class="fas fa-trash"></i>
-        </button>
-    </div>
-</td>
-                                </tr>
-                            }
-                            @if (!Model.Any())
-                            {
-                                <tr>
-                                    <td colspan="6" class="text-center py-4">
-                                        <div class="text-muted">
-                                            <i class="fas fa-users fa-3x mb-3"></i>
-                                            <p>No users found. Add your first user!</p>
+                                        <div>
+                                            <div class="fw-bold">@user.Username</div>
                                         </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                                    </div>
+                                </td>
+                                <td>@user.Email</td>
+                                <td>
+                                    <span class="badge @(user.Role == "Admin" ? "bg-danger" : user.Role == "Staff" ? "bg-info" : "bg-secondary")">
+                                        @user.Role
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (user.ServicePointId.HasValue)
+                                    {
+                                        <span class="badge bg-success" title="@user.ServicePointName">@user.ServicePointName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Not Assigned</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info assign-btn"
+                                                title="Assign"
+                                                data-user-id="@user.Id"
+                                                data-user-role="@user.Role"
+                                                data-current-sp="@(user.ServicePointId?.ToString() ?? "")"
+                                                @(user.Role == "Admin" ? "disabled" : "")>
+                                            Assign
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-users fa-3x mb-3"></i>
+                                        <p>No users found. Add your first user!</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Add User Modal -->
-    <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Staff Member</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="addStaffForm">
-                    @Html.AntiForgeryToken()
-                    <div class="modal-body">
-                        <div id="formError" class="alert alert-danger d-none"></div>
-                        <div id="formSuccess" class="alert alert-success d-none"></div>
-
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username *</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email *</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password *</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="confirmPassword" class="form-label">Confirm Password *</label>
-                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required >
-                        </div>
-
-                        <input type="hidden" name="role" value="Staff">
-
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="submitBtn">Add Staff</button>
-                    </div>
-                </form>
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Staff Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form id="addStaffForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div id="formError" class="alert alert-danger d-none"></div>
+                    <div id="formSuccess" class="alert alert-success d-none"></div>
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username *</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password *</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm Password *</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+
+                    <input type="hidden" name="role" value="Staff">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Add Staff</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 
-    <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+<!-- Assign User Modal -->
+<div class="modal fade" id="assignUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Service Point Assignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="assignUserForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="assignUserId" name="userId">
+                <div class="modal-body">
+                    <div id="assignFormError" class="alert alert-danger d-none"></div>
+                    <div id="assignFormSuccess" class="alert alert-success d-none"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Current Status</label>
+                        <div id="currentStatus" class="alert alert-light"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="servicePointId" class="form-label">Select Service Point</label>
+                        <select class="form-select" id="servicePointId" name="servicePointId">
+                            <option value="" selected>-- Unassign --</option>
+                            <!-- Options will be loaded dynamically -->
+                        </select>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitAssignBtn">Save Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit and Delete Modals (existing, unchanged) -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -259,151 +301,285 @@
     </div>
 </div>
 
-    <style>
-        .symbol {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.475rem;
+<style>
+    .symbol {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.475rem;
+    }
+
+    .symbol-40px {
+        width: 40px;
+        height: 40px;
+    }
+
+    .symbol-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: var(--bs-primary);
+        background-color: var(--bs-primary-bg-subtle);
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+        border-radius: 0.475rem;
+        width: 100%;
+        height: 100%;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.04);
+    }
+
+    .card {
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+    }
+
+    .card-header {
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+    }
+</style>
+
+<script>
+    // Existing Add Staff form code (unchanged)
+    document.getElementById('addStaffForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+        const errorDiv = document.getElementById('formError');
+        const successDiv = document.getElementById('formSuccess');
+
+        // Hide previous messages
+        errorDiv.classList.add('d-none');
+        successDiv.classList.add('d-none');
+
+        // Show loading
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        submitBtn.disabled = true;
+
+        // Validate passwords match
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (password !== confirmPassword) {
+            errorDiv.textContent = 'Passwords do not match';
+            errorDiv.classList.remove('d-none');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        if (password.length < 8) {
+            errorDiv.textContent = 'Password must be at least 8 characters long';
+            errorDiv.classList.remove('d-none');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
         }
 
-        .symbol-40px {
-            width: 40px;
-            height: 40px;
-        }
+        // Prepare form data
+        const formData = new FormData(this);
 
-        .symbol-label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            color: var(--bs-primary);
-            background-color: var(--bs-primary-bg-subtle);
-            background-repeat: no-repeat;
-            background-position: center center;
-            background-size: cover;
-            border-radius: 0.475rem;
-            width: 100%;
-            height: 100%;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: rgba(13, 110, 253, 0.04);
-        }
-
-        .card {
-            border: 1px solid #e3e6f0;
-            border-radius: 0.35rem;
-        }
-
-        .card-header {
-            background-color: #f8f9fc;
-            border-bottom: 1px solid #e3e6f0;
-        }
-    </style>
-
-    <script>
-        document.getElementById('addStaffForm').addEventListener('submit', async function (event) {
-            event.preventDefault();
-
-            const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.innerHTML;
-            const errorDiv = document.getElementById('formError');
-            const successDiv = document.getElementById('formSuccess');
-
-            // Hide previous messages
-            errorDiv.classList.add('d-none');
-            successDiv.classList.add('d-none');
-
-            // Show loading
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
-            submitBtn.disabled = true;
-
-            // Validate passwords match
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-
-            if (password !== confirmPassword) {
-                errorDiv.textContent = 'Passwords do not match';
-                errorDiv.classList.remove('d-none');
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-                return;
-            }
-            if (password.length < 8) {
-                errorDiv.textContent = 'Password must be at least 8 characters long';
-                errorDiv.classList.remove('d-none');
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-                return;
-            }
-
-            // Prepare form data
-            const formData = new FormData(this);
-
-            try {
-                const response = await fetch('@Url.Action("AddStaff", "Admin")', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                    }
-                });
-
-                if (response.ok) {
-                    // Success
-                    successDiv.textContent = 'Staff member added successfully!';
-                    successDiv.classList.remove('d-none');
-
-                    // Clear form
-                    this.reset();
-
-                    // Close modal after 2 seconds and reload page
-                    setTimeout(() => {
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
-                        modal.hide();
-                        window.location.reload();
-                    }, 2000);
-                } else {
-                    // Error
-                    const errorText = await response.text();
-                    errorDiv.textContent = errorText || 'Error adding staff member';
-                    errorDiv.classList.remove('d-none');
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
+        try {
+            const response = await fetch('@Url.Action("AddStaff", "Admin")', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
                 }
-            } catch (error) {
-                errorDiv.textContent = 'Network error. Please try again.';
+            });
+
+            if (response.ok) {
+                // Success
+                successDiv.textContent = 'Staff member added successfully!';
+                successDiv.classList.remove('d-none');
+
+                // Clear form
+                this.reset();
+
+                // Close modal after 2 seconds and reload page
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
+                    modal.hide();
+                    window.location.reload();
+                }, 2000);
+            } else {
+                // Error
+                const errorText = await response.text();
+                errorDiv.textContent = errorText || 'Error adding staff member';
                 errorDiv.classList.remove('d-none');
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
-        });
+        } catch (error) {
+            errorDiv.textContent = 'Network error. Please try again.';
+            errorDiv.classList.remove('d-none');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
 
-        // Clear form when modal is closed
-        document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function () {
-            document.getElementById('addStaffForm').reset();
+    // Clear form when modal is closed
+    document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('addStaffForm').reset();
+        document.getElementById('formError').classList.add('d-none');
+        document.getElementById('formSuccess').classList.add('d-none');
+    });
+
+    // Clear error when user starts typing
+    document.querySelectorAll('#addStaffForm input').forEach(input => {
+        input.addEventListener('input', () => {
             document.getElementById('formError').classList.add('d-none');
-            document.getElementById('formSuccess').classList.add('d-none');
         });
+    });
 
-        // Clear error when user starts typing
-        document.querySelectorAll('#addStaffForm input').forEach(input => {
-            input.addEventListener('input', () => {
-                document.getElementById('formError').classList.add('d-none');
+    // NEW: Assignment functionality
+    document.querySelectorAll('.assign-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            if (this.disabled) return; // Skip if disabled (Admin)
+
+            const userId = this.getAttribute('data-user-id');
+            const userRole = this.getAttribute('data-user-role');
+            const currentSp = this.getAttribute('data-current-sp');
+
+            // Set user ID
+            document.getElementById('assignUserId').value = userId;
+
+            // Clear previous messages
+            document.getElementById('assignFormError').classList.add('d-none');
+            document.getElementById('assignFormSuccess').classList.add('d-none');
+
+            // Set current status
+            const currentStatusDiv = document.getElementById('currentStatus');
+            if (currentSp) {
+                currentStatusDiv.innerHTML = `<i class="fas fa-check-circle text-success me-2"></i>Currently assigned to a service point`;
+                currentStatusDiv.className = 'alert alert-success';
+            } else {
+                currentStatusDiv.innerHTML = `<i class="fas fa-exclamation-circle text-warning me-2"></i>Not currently assigned`;
+                currentStatusDiv.className = 'alert alert-warning';
+            }
+
+            // Load service points
+            await loadServicePointsForAssignment(currentSp);
+
+            // Show modal
+            new bootstrap.Modal(document.getElementById('assignUserModal')).show();
+        });
+    });
+
+    // Load service points for dropdown
+    async function loadServicePointsForAssignment(currentlyAssignedId) {
+        try {
+            const response = await fetch('@Url.Action("GetServicePointsForAssignment", "Admin")');
+            if (response.ok) {
+                const servicePoints = await response.json();
+                const dropdown = document.getElementById('servicePointId');
+                dropdown.innerHTML = '<option value="">-- Unassign --</option>';
+
+                servicePoints.forEach(point => {
+                    const option = document.createElement('option');
+                    option.value = point.id;
+
+                   let label = `${point.name} — ${point.isActive ? 'Active' : 'Inactive'} · ${point.isAssigned ? 'Occupied' : 'Available'}`;
+
+
+                    option.textContent = label;
+                    option.disabled = point.isAssigned && point.id != currentlyAssignedId;
+
+                    if (point.id == currentlyAssignedId) {
+                        option.selected = true;
+                    }
+
+                    dropdown.appendChild(option);
+                });
+            } else {
+                console.error('Failed to load service points');
+            }
+        } catch (error) {
+            console.error('Error loading service points:', error);
+        }
+    }
+
+    // Assignment form submission
+    document.getElementById('assignUserForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const submitBtn = document.getElementById('submitAssignBtn');
+        const originalText = submitBtn.innerHTML;
+        const errorDiv = document.getElementById('assignFormError');
+        const successDiv = document.getElementById('assignFormSuccess');
+
+        // Hide previous messages
+        errorDiv.classList.add('d-none');
+        successDiv.classList.add('d-none');
+
+        // Show loading
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        submitBtn.disabled = true;
+
+        // Prepare form data
+        const formData = new FormData(this);
+        const servicePointId = document.getElementById('servicePointId').value;
+        formData.set('servicePointId', servicePointId || '');
+
+        try {
+            const response = await fetch('@Url.Action("AssignStaffToServicePoint", "Admin")', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('#assignUserForm input[name="__RequestVerificationToken"]').value
+                }
             });
+
+            if (response.ok) {
+                // Success
+                successDiv.textContent = servicePointId ? 'Assignment updated successfully!' : 'User unassigned successfully!';
+                successDiv.classList.remove('d-none');
+
+                // Close modal after 1.5 seconds and reload page
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('assignUserModal'));
+                    modal.hide();
+                    window.location.reload();
+                }, 1500);
+            } else {
+                // Error
+                const errorText = await response.text();
+                errorDiv.textContent = errorText || 'Error updating assignment';
+                errorDiv.classList.remove('d-none');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        } catch (error) {
+            errorDiv.textContent = 'Network error. Please try again.';
+            errorDiv.classList.remove('d-none');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Clear assignment form when modal is closed
+    document.getElementById('assignUserModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('assignUserForm').reset();
+        document.getElementById('assignFormError').classList.add('d-none');
+        document.getElementById('assignFormSuccess').classList.add('d-none');
+        document.getElementById('servicePointId').innerHTML = '<option value="">-- Unassign --</option>';
+    });
+
+    // Existing edit and delete handlers
+    document.querySelectorAll('.btn-outline-primary').forEach(btn => {
+        btn.addEventListener('click', () => {
+            new bootstrap.Modal(document.getElementById('editUserModal')).show();
         });
-
-        document.querySelectorAll('.btn-outline-primary').forEach(btn => {
-    btn.addEventListener('click', () => {
-        new bootstrap.Modal(document.getElementById('editUserModal')).show();
     });
-});
 
-// Delete button
-document.querySelectorAll('.btn-outline-danger').forEach(btn => {
-    btn.addEventListener('click', () => {
-        new bootstrap.Modal(document.getElementById('deleteUserModal')).show();
+    document.querySelectorAll('.btn-outline-danger').forEach(btn => {
+        btn.addEventListener('click', () => {
+            new bootstrap.Modal(document.getElementById('deleteUserModal')).show();
+        });
     });
-});
-    </script>
+</script>

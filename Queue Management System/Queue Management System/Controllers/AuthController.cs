@@ -70,7 +70,7 @@ namespace Queue_Management_System.Controllers
 			}
 			else if (user.Role == "Staff") // ADD THIS
 			{
-				return RedirectToAction("ServicePoint", "Queue"); // You need to create this
+				return RedirectToAction("Dashboard", "Staff"); // You need to create this
 			}
 			else
 			{
@@ -87,5 +87,60 @@ namespace Queue_Management_System.Controllers
 			await HttpContext.SignOutAsync("Cookies");
 			return RedirectToAction("Login");
 		}
+
+		[HttpPost]
+        public async Task<IActionResult> Register(string username, string email, string password, string confirmPassword, int? servicePointId)
+        {
+            try
+            {
+                // Validation
+                if (password != confirmPassword)
+                {
+                    return BadRequest("Passwords do not match");
+                }
+
+                // Check if user exists
+                var existingUser = await _userRepository.GetUserByUsernameOrEmail(username);
+                if (existingUser != null)
+                {
+                    return BadRequest("Username already exists");
+                }
+
+                // Hash password
+                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
+
+                // Create user
+                var newUser = new User
+                {
+                    Username = username,
+                    Email = email,
+                    PasswordHash = hashedPassword,
+                    Role = "Admin",
+                    ServicePointId = servicePointId
+                };
+
+                // Save to database
+                int userId = await _userRepository.AddUser(newUser);
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("users_email_key"))
+                {
+                    return BadRequest("Email already exists. Please use a different email address.");
+                }
+                else if (ex.Message.Contains("users_username_key"))
+                {
+                    return BadRequest("Username already exists. Please choose a different username.");
+                }
+                else
+                {
+                    return BadRequest($"Error adding admin: {ex.Message.Split(':')[0]}");
+                }
+            }
+
+
+        }
 	}
 }

@@ -405,4 +405,5 @@ ASALocalRun/
 .localhistory/
 
 .env
-wwwroot/tickets/
+# Ticket PDF files
+Queue Management System/Queue Management System/wwwroot/tickets/*.pdf

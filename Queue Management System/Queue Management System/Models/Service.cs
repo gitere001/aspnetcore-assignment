@@ -5,9 +5,8 @@ public class Service
 {
     public int Id { get; set; }
 	[Required]
-    public string Name { get; set; } = string.Empty;  // "Doctor Consultation"
+    public string Name { get; set; } = string.Empty;
     [Required]
-    public string PrefixCode { get; set; } = string.Empty;  // "D" for ticket D001
-
+    public string PrefixCode { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 }}
