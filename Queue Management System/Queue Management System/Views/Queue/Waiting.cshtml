@@ -1,0 +1,241 @@
+@{
+    ViewData["Title"] = "Now Serving";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Now Serving - Queue Management System</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Local CSS -->
+    <link rel="stylesheet" href="~/css/waiting.css">
+</head>
+<body>
+    <div class="container">
+        <div class="display-card">
+
+            <!-- Header -->
+            <div class="header">
+                <h1 class="main-title">
+                    <i class="fas fa-bullhorn"></i> Now Serving
+                </h1>
+                <p class="subtitle">Please proceed to your assigned service point when your number is called</p>
+            </div>
+
+            <!-- Tickets Display -->
+            <div class="tickets-container" id="ticketsContainer">
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="empty-text">No tickets are currently being served</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ── State ──────────────────────────────────────────
+        const state = {
+            tickets: {},        // { ticketNumber: { servicePointId, callCount, addedAt } }
+            speaking: false,    // is voice currently active?
+            initialized: false  // first fetch done? (don't speak on page load)
+        };
+
+        // ── Voice Setup ────────────────────────────────────
+        let voices = [];
+
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+        }
+
+        // Chrome loads voices asynchronously
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+        loadVoices();
+
+        // Pick the best natural English voice available on the device
+        function getBestVoice() {
+            const preferred = [
+                v => v.name.includes('Google') && v.lang.startsWith('en'),
+                v => v.name.includes('Samantha') && v.lang.startsWith('en'),
+                v => v.name.includes('Alex') && v.lang.startsWith('en'),
+                v => v.name.includes('Daniel') && v.lang.startsWith('en'),
+                v => v.lang === 'en-US',
+                v => v.lang.startsWith('en')
+            ];
+            for (const match of preferred) {
+                const found = voices.find(match);
+                if (found) return found;
+            }
+            return voices[0] || null;
+        }
+
+        // Speak one message, call onDone when finished
+        function speak(text, onDone) {
+            if (!window.speechSynthesis) { if (onDone) onDone(); return; }
+
+            // Chrome bug: must cancel before speaking new utterance
+            window.speechSynthesis.cancel();
+
+            // Small delay so cancel clears properly before next speak
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.voice = getBestVoice();
+                utterance.rate = 0.95;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                utterance.lang = 'en-US';
+
+                utterance.onend = () => { if (onDone) onDone(); };
+                utterance.onerror = () => { if (onDone) onDone(); };
+
+                window.speechSynthesis.speak(utterance);
+            }, 150);
+        }
+
+        // ── Call Queue Engine ──────────────────────────────
+        // Returns the next ticket to announce:
+        //   Priority 1 → lowest callCount
+        //   Priority 2 → earliest addedAt (FIFO)
+        function getNextTicket() {
+            const keys = Object.keys(state.tickets);
+            if (keys.length === 0) return null;
+
+            keys.sort((a, b) => {
+                const diff = state.tickets[a].callCount - state.tickets[b].callCount;
+                if (diff !== 0) return diff;
+                return state.tickets[a].addedAt - state.tickets[b].addedAt;
+            });
+
+            return keys[0];
+        }
+
+        // Announce one ticket → wait 3 sec → announce next → loop
+        function announceNext() {
+            if (state.speaking) return;
+
+            const ticketNum = getNextTicket();
+            if (!ticketNum) { state.speaking = false; return; }
+
+            state.speaking = true;
+            const ticket = state.tickets[ticketNum];
+            ticket.callCount++;
+
+            const text = `Ticket ${ticketNum}, please proceed to Service ${ticket.servicePointId}.`;
+
+            speak(text, () => {
+                // Wait 3 seconds after speech ends, then move to next
+                setTimeout(() => {
+                    state.speaking = false;
+                    announceNext();
+                }, 3000);
+            });
+        }
+
+        // ── Fetch & Sync ───────────────────────────────────
+        function fetchTickets() {
+            fetch('/Queue/GetCalledTickets')
+                .then(response => response.json())
+                .then(data => {
+                    const incoming = data.tickets || [];
+                    syncTickets(incoming);
+                    renderTickets(incoming);
+                })
+                .catch(error => console.error('Error fetching tickets:', error));
+        }
+
+        // Compare incoming vs current state — add new, remove gone
+        function syncTickets(incoming) {
+            const incomingMap = new Map(incoming.map(t => [t.ticketNumber, t]));
+
+            // Remove tickets no longer in the response
+            for (const num of Object.keys(state.tickets)) {
+                if (!incomingMap.has(num)) {
+                    delete state.tickets[num];
+                }
+            }
+
+            // Track if any brand new ticket appeared
+            let hasNew = false;
+
+            for (const ticket of incoming) {
+                if (!state.tickets[ticket.ticketNumber]) {
+                    state.tickets[ticket.ticketNumber] = {
+                        servicePointId: ticket.servicePointId,
+                        callCount: 0,
+                        addedAt: Date.now()
+                    };
+                    hasNew = true;
+                }
+            }
+
+            // First load: register silently, set callCount to 1 so loop starts fair
+            if (!state.initialized) {
+                state.initialized = true;
+                for (const num of Object.keys(state.tickets)) {
+                    state.tickets[num].callCount = 1;
+                }
+                return;
+            }
+
+            // New ticket arrived → kick off the loop (it will auto-continue)
+            if (hasNew && !state.speaking) {
+                announceNext();
+            }
+        }
+
+        // ── Render ─────────────────────────────────────────
+        function renderTickets(tickets) {
+            const container = document.getElementById('ticketsContainer');
+
+            if (tickets.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="fas fa-clock"></i></div>
+                        <div class="empty-text">No tickets are currently being served</div>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            tickets.forEach(ticket => {
+                html += `
+                    <div class="ticket-card fade-in">
+                        <div class="ticket-number">${ticket.ticketNumber}</div>
+                        <div class="service-point">Please proceed to</div>
+                        <div>
+                            <span class="counter-badge">
+                                <i class="fas fa-map-marker-alt"></i> Service ${ticket.servicePointId}
+                            </span>
+                        </div>
+                        <div class="status-indicator">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Currently Called</span>
+                        </div>
+                    </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ── Init ───────────────────────────────────────────
+        fetchTickets();
+        setInterval(fetchTickets, 5000);
+
+        // Page refresh every 30 min to stay clean
+        setTimeout(() => window.location.reload(), 30 * 60 * 1000);
+    </script>
+</body>
+</html>

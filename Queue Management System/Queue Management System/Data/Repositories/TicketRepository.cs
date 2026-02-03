@@ -228,5 +228,30 @@ namespace Queue_Management_System.Data.Repositories
                 throw;
             }
         }
+
+        public class CalledTicketDto
+        {
+            public string TicketNumber { get; set; } = string.Empty;
+            public int? ServicePointId { get; set; }
+        }
+
+        public async Task<List<CalledTicketDto>> GetCalledTickets()
+        {
+            var sql = @"
+        SELECT
+            t.ticket_number,
+            t.service_point_id
+        FROM tickets t
+        WHERE t.status = 'Called'
+        ORDER BY t.called_at ASC;
+    ";
+
+            return await _db.ExecuteQueryAsync(sql,
+                reader => new CalledTicketDto
+                {
+                    TicketNumber = reader.GetString(0),
+                    ServicePointId = reader.IsDBNull(1) ? null : reader.GetInt32(1)
+                });
+        }
     }
 }
