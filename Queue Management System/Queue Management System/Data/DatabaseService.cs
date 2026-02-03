@@ -118,5 +118,18 @@ namespace Queue_Management_System.Data
             return results;
         }
 
+        public async Task<int> ExecuteNonQueryWithResultAsync(string sql, params NpgsqlParameter[] parameters)
+        {
+            using var connection = CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new NpgsqlCommand(sql, connection);
+
+            if (parameters?.Length > 0)
+                command.Parameters.AddRange(parameters);
+
+            return await command.ExecuteNonQueryAsync();
+        }
+
     }
 }
