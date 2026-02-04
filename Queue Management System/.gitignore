@@ -407,3 +407,4 @@ ASALocalRun/
 .env
 # Ticket PDF files
 Queue Management System/Queue Management System/wwwroot/tickets/*.pdf
+wwwroot/tickets/*.pdf
