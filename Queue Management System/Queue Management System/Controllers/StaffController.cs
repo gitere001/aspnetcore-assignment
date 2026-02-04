@@ -60,8 +60,7 @@ namespace Queue_Management_System.Controllers
 
                 // Fetch staff with service point details
                 var staff = await _userRepository.GetUserById(userId);
-                _logger.LogInformation("Fetching queue for staff ID: {UserId}", userId);
-                _logger.LogInformation("Staff details: {@Staff}", staff);
+
                 if (staff == null)
                 {
                     return Json(new { error = "Staff not found or not assigned" });
@@ -387,16 +386,6 @@ namespace Queue_Management_System.Controllers
         public async Task<IActionResult> GetServicePointsForAssignment()
         {
             var points = await _servicePointRepository.GetServicePointsForDropdown();
-            _logger.LogInformation(
-        "Fetched {Count} service points for assignment: {Points}",
-        points.Count(),
-        string.Join(", ",
-            points.Select(p =>
-                $"[{p.Id}] {p.Name} (Active={p.IsActive}, Assigned={p.IsAssigned})"
-            )
-        )
-        );
-
 
             return Json(points);
         }
@@ -458,7 +447,8 @@ namespace Queue_Management_System.Controllers
                 var success = await _ticketRepository.TransferTicket(
                 servingTicket.TicketNumber,
                 userId,
-                destinationSp.ServiceId
+                destinationSp.ServiceId,
+                destinationSp.Id
                 );
 
                 if (!success)

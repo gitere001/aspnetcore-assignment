@@ -118,20 +118,23 @@ namespace Queue_Management_System.Data.Repositories
             t.ticket_number,
             t.status,
             t.created_at,
-			t.service_id
+            t.service_id
         FROM tickets t
         JOIN service_points sp ON sp.id = @servicePointId
         WHERE t.service_id = sp.service_id
            AND (
-      t.status = 'Waiting'  -- Shared queue for all staff
-      OR
-      (
-          t.status IN ('Called', 'Serving')
-          AND t.served_by_user_id = @currentUserId  -- Only MY tickets
-      )
-  )
-       ORDER BY t.created_at ASC;
-    ";
+                (
+                    t.status = 'Waiting'
+                    AND (t.service_point_id IS NULL OR t.service_point_id = @servicePointId)
+                )
+                OR
+                (
+                    t.status IN ('Called', 'Serving')
+                    AND t.served_by_user_id = @currentUserId
+                )
+            )
+        ORDER BY t.created_at ASC;
+        ";
 
             return await _db.ExecuteQueryAsync(sql,
                 reader => new Ticket
@@ -146,7 +149,6 @@ namespace Queue_Management_System.Data.Repositories
                 new NpgsqlParameter("@currentUserId", currentUserId)
             );
         }
-
         public async Task<Dictionary<string, object>?> CallNextTicket(int servicePointId, int staffUserId)
         {
             try
@@ -312,14 +314,18 @@ namespace Queue_Management_System.Data.Repositories
             }
         }
 
-        public async Task<bool> TransferTicket(string ticketNumber, int staffUserId, int destinationServiceId)
+        public async Task<bool> TransferTicket(
+     string ticketNumber,
+     int staffUserId,
+     int destinationServiceId,
+     int destinationServicePointId)
         {
             try
             {
                 var sql = @"
             UPDATE tickets
             SET service_id = @destinationServiceId,
-                service_point_id = NULL,
+                service_point_id = @destinationServicePointId,
                 served_by_user_id = NULL,
                 status = 'Waiting',
                 called_at = NULL,
@@ -332,7 +338,8 @@ namespace Queue_Management_System.Data.Repositories
                 var rowsAffected = await _db.ExecuteNonQueryWithResultAsync(sql,
                     new NpgsqlParameter("@ticketNumber", ticketNumber),
                     new NpgsqlParameter("@staffUserId", staffUserId),
-                    new NpgsqlParameter("@destinationServiceId", destinationServiceId));
+                    new NpgsqlParameter("@destinationServiceId", destinationServiceId),
+                    new NpgsqlParameter("@destinationServicePointId", destinationServicePointId));
 
                 return rowsAffected > 0;
             }
