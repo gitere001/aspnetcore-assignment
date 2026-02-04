@@ -20,6 +20,23 @@
     <link rel="stylesheet" href="~/css/waiting.css">
 </head>
 <body>
+    <!-- Voice Enable Modal -->
+    <div class="voice-modal-overlay" id="voiceModal">
+        <div class="voice-modal">
+            <div class="voice-modal-icon">
+                <i class="fas fa-volume-up"></i>
+            </div>
+            <h2 class="voice-modal-title">Enable Voice Announcements</h2>
+            <p class="voice-modal-text">
+                This display uses voice to call ticket numbers.<br>
+                Please enable sound to hear announcements.
+            </p>
+            <button class="voice-enable-btn" id="enableVoiceBtn" onclick="enableVoice()">
+                <i class="fas fa-check-circle"></i> Enable Voice
+            </button>
+        </div>
+    </div>
+
     <div class="container">
         <div class="display-card">
 
@@ -45,6 +62,70 @@
     </div>
 
     <script>
+        // ── Voice Permission Manager ───────────────────────
+        const voiceManager = {
+            enabled: false,
+            modal: null,
+            button: null,
+
+            init() {
+                this.modal = document.getElementById('voiceModal');
+                this.button = document.getElementById('enableVoiceBtn');
+                // Modal is visible by default - user MUST click to enable
+            },
+
+            setEnabled() {
+                this.enabled = true;
+
+                // Hide modal with fade out
+                if (this.modal) {
+                    this.modal.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(() => {
+                        this.modal.style.display = 'none';
+                    }, 300);
+                }
+            },
+
+            isEnabled() {
+                return this.enabled;
+            }
+        };
+
+        // ── Voice Enable Function ──────────────────────────
+        function enableVoice() {
+            const btn = document.getElementById('enableVoiceBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enabling...';
+
+            // Test utterance to unlock voice (CRITICAL!)
+            const testUtterance = new SpeechSynthesisUtterance("Voice enabled.");
+            testUtterance.volume = 0.3;
+            testUtterance.rate = 0.9;
+
+            testUtterance.onstart = () => {
+                console.log('✅ Voice unlocked successfully');
+            };
+
+            testUtterance.onend = () => {
+                // Mark as enabled
+                voiceManager.setEnabled();
+
+                // If there are tickets waiting, start announcements
+                if (state.initialized && Object.keys(state.tickets).length > 0 && !state.speaking) {
+                    announceNext();
+                }
+            };
+
+            testUtterance.onerror = (e) => {
+                console.error('Voice error:', e.error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Try Again';
+            };
+
+            // This unlocks voice for the entire page session
+            window.speechSynthesis.speak(testUtterance);
+        }
+
         // ── State ──────────────────────────────────────────
         const state = {
             tickets: {},        // { ticketNumber: { servicePointId, callCount, addedAt } }
@@ -84,7 +165,17 @@
 
         // Speak one message, call onDone when finished
         function speak(text, onDone) {
-            if (!window.speechSynthesis) { if (onDone) onDone(); return; }
+            // CRITICAL: Check if voice is enabled before speaking
+            if (!voiceManager.isEnabled()) {
+                console.log('⚠️ Voice not enabled yet, skipping announcement');
+                if (onDone) onDone();
+                return;
+            }
+
+            if (!window.speechSynthesis) {
+                if (onDone) onDone();
+                return;
+            }
 
             // Chrome bug: must cancel before speaking new utterance
             window.speechSynthesis.cancel();
@@ -133,7 +224,11 @@
             const ticket = state.tickets[ticketNum];
             ticket.callCount++;
 
-            const text = `Ticket ${ticketNum}, please proceed to Service ${ticket.servicePointId}.`;
+            // Format ticket number for clear pronunciation
+const parts = ticketNum.split('-');
+const prefix = parts[0].split('').join(' ');
+const number = parts[1].split('').join(' ');
+const text = `Ticket number ${prefix} dash ${number}, please proceed to Service number ${ticket.servicePointId}.`;
 
             speak(text, () => {
                 // Wait 3 seconds after speech ends, then move to next
@@ -191,7 +286,8 @@
             }
 
             // New ticket arrived → kick off the loop (it will auto-continue)
-            if (hasNew && !state.speaking) {
+            // Only announce if voice is enabled
+            if (hasNew && !state.speaking && voiceManager.isEnabled()) {
                 announceNext();
             }
         }
@@ -231,6 +327,10 @@
         }
 
         // ── Init ───────────────────────────────────────────
+        // Initialize voice manager FIRST
+        voiceManager.init();
+
+        // Then start fetching tickets
         fetchTickets();
         setInterval(fetchTickets, 5000);
 

@@ -253,5 +253,93 @@ namespace Queue_Management_System.Data.Repositories
                     ServicePointId = reader.IsDBNull(1) ? null : reader.GetInt32(1)
                 });
         }
+
+        public async Task<List<Ticket>> GetActiveTicketsForStaff(int staffUserId)
+        {
+            var sql = @"
+        SELECT
+            id,
+            ticket_number,
+            service_id,
+            service_point_id,
+            status,
+            created_at
+        FROM tickets
+        WHERE served_by_user_id = @staffUserId
+          AND status IN ('Called', 'Serving')
+        ORDER BY created_at ASC;
+    ";
+
+            return await _db.ExecuteQueryAsync(
+                sql,
+                reader => new Ticket
+                {
+                    Id = reader.GetInt32(0),
+                    TicketNumber = reader.GetString(1),
+                    ServiceId = reader.GetInt32(2),
+                    ServicePointId = reader.IsDBNull(3) ? null : reader.GetInt32(3),
+                    Status = reader.GetString(4),
+                    CreatedAt = reader.GetDateTime(5)
+                },
+                new NpgsqlParameter("@staffUserId", staffUserId)
+            );
+        }
+        public async Task<bool> ReturnTicketToWaiting(string ticketNumber, int staffUserId)
+        {
+            try
+            {
+                var sql = @"
+            UPDATE tickets
+            SET status = 'Waiting',
+                served_by_user_id = NULL,
+                service_point_id = NULL,
+                called_at = NULL,
+                waiting_time_seconds = NULL
+            WHERE ticket_number = @ticketNumber
+              AND served_by_user_id = @staffUserId
+              AND status = 'Called';
+        ";
+
+                var rowsAffected = await _db.ExecuteNonQueryWithResultAsync(sql,
+                    new NpgsqlParameter("@ticketNumber", ticketNumber),
+                    new NpgsqlParameter("@staffUserId", staffUserId));
+
+                return rowsAffected > 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> TransferTicket(string ticketNumber, int staffUserId, int destinationServiceId)
+        {
+            try
+            {
+                var sql = @"
+            UPDATE tickets
+            SET service_id = @destinationServiceId,
+                service_point_id = NULL,
+                served_by_user_id = NULL,
+                status = 'Waiting',
+                called_at = NULL,
+                waiting_time_seconds = NULL
+            WHERE ticket_number = @ticketNumber
+              AND served_by_user_id = @staffUserId
+              AND status = 'Serving';
+        ";
+
+                var rowsAffected = await _db.ExecuteNonQueryWithResultAsync(sql,
+                    new NpgsqlParameter("@ticketNumber", ticketNumber),
+                    new NpgsqlParameter("@staffUserId", staffUserId),
+                    new NpgsqlParameter("@destinationServiceId", destinationServiceId));
+
+                return rowsAffected > 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
     }
 }

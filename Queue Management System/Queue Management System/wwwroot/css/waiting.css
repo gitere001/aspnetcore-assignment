@@ -163,15 +163,118 @@ body {
     font-weight: 500;
 }
 
+/* ── Voice Enable Modal ── */
+.voice-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.voice-modal {
+    background: white;
+    border-radius: 20px;
+    padding: 3rem 2.5rem;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.4s ease;
+}
+
+.voice-modal-icon {
+    font-size: 4rem;
+    color: #3b7dd8;
+    margin-bottom: 1.5rem;
+    animation: modalPulse 2s infinite;
+}
+
+.voice-modal-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 1rem;
+}
+
+.voice-modal-text {
+    font-size: 1.05rem;
+    color: #6b7280;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.voice-enable-btn {
+    background: linear-gradient(135deg, #3b7dd8 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    padding: 1rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(59, 125, 216, 0.3);
+}
+
+.voice-enable-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 125, 216, 0.4);
+}
+
+.voice-enable-btn:active {
+    transform: translateY(0);
+}
+
+.voice-enable-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 /* ── Animations ── */
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50%      { opacity: 0.4; }
 }
 
+@keyframes modalPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .fade-in {
@@ -199,5 +302,27 @@ body {
     .tickets-container {
         grid-template-columns: 1fr;
         gap: 1rem;
+    }
+
+    .voice-modal {
+        padding: 2rem 1.5rem;
+        margin: 1rem;
+    }
+
+    .voice-modal-icon {
+        font-size: 3rem;
+    }
+
+    .voice-modal-title {
+        font-size: 1.5rem;
+    }
+
+    .voice-modal-text {
+        font-size: 0.95rem;
+    }
+
+    .voice-enable-btn {
+        padding: 0.8rem 2rem;
+        font-size: 1rem;
     }
 }

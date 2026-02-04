@@ -155,8 +155,8 @@ namespace Queue_Management_System.Data.Repositories
             return points.FirstOrDefault();
         }
         public async Task<List<ServicePointDropdownDto>> GetServicePointsForDropdown()
-{
-    var sql = @"
+        {
+            var sql = @"
         SELECT
             sp.id,
             sp.name,
@@ -167,16 +167,42 @@ namespace Queue_Management_System.Data.Repositories
         ORDER BY sp.name;
     ";
 
-    return await _db.ExecuteQueryAsync(
-        sql,
-        reader => new ServicePointDropdownDto
-        {
-            Id = reader.GetInt32(0),
-            Name = reader.GetString(1),
-            IsActive = reader.GetBoolean(2),
-            IsAssigned = reader.GetBoolean(3)
+            return await _db.ExecuteQueryAsync(
+                sql,
+                reader => new ServicePointDropdownDto
+                {
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1),
+                    IsActive = reader.GetBoolean(2),
+                    IsAssigned = reader.GetBoolean(3)
+                }
+            );
         }
-    );
-}
+
+        public async Task<List<ServicePoint>> GetServicePointsByServiceId(int serviceId)
+        {
+            var sql = @"
+        SELECT
+            id,
+            name,
+            service_id,
+            is_active,
+            created_at
+        FROM service_points
+        WHERE service_id = @service_id;
+    ";
+            return await _db.ExecuteQueryAsync(
+                sql,
+                reader => new ServicePoint
+                {
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1),
+                    ServiceId = reader.GetInt32(2),
+                    IsActive = reader.GetBoolean(3),
+                    CreatedAt = reader.GetDateTime(4)
+                },
+                new NpgsqlParameter("@service_id", serviceId)
+            );
+        }
     }
 }

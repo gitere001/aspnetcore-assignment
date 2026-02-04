@@ -151,14 +151,14 @@
                                         <button class="btn btn-sm btn-outline-primary" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-info assign-btn"
+                                        @* <button class="btn btn-sm btn-outline-info assign-btn"
                                                 title="Assign"
                                                 data-user-id="@user.Id"
                                                 data-user-role="@user.Role"
                                                 data-current-sp="@(user.ServicePointId?.ToString() ?? "")"
                                                 @(user.Role == "Admin" ? "disabled" : "")>
                                             Assign
-                                        </button>
+                                        </button> *@
                                         <button class="btn btn-sm btn-outline-danger" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>

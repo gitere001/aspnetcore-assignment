@@ -7,88 +7,88 @@ using Microsoft.AspNetCore.Authentication;
 
 namespace Queue_Management_System.Controllers
 {
-	public class AuthController : Controller
-	{
-		private readonly UserRepository _userRepository;
+    public class AuthController : Controller
+    {
+        private readonly UserRepository _userRepository;
 
-		public AuthController(UserRepository userRepository)
-		{
-			_userRepository = userRepository;
-		}
+        public AuthController(UserRepository userRepository)
+        {
+            _userRepository = userRepository;
+        }
 
-		// GET: /Auth/Login
-		[HttpGet]
-		public IActionResult Login()
-		{
-			return View();
-		}
+        // GET: /Auth/Login
+        [HttpGet]
+        public IActionResult Login()
+        {
+            return View();
+        }
 
-		// POST: /Auth/Login
-		[HttpPost]
-		public async Task<IActionResult> Login(string usernameOrEmail, string password)
-		{
-			// 1. Fetch user by username or email
-			var user = await _userRepository.GetUserByUsernameOrEmail(usernameOrEmail);
+        // POST: /Auth/Login
+        [HttpPost]
+        public async Task<IActionResult> Login(string usernameOrEmail, string password)
+        {
+            // 1. Fetch user by username or email
+            var user = await _userRepository.GetUserByUsernameOrEmail(usernameOrEmail);
 
-			if (user == null)
-			{
-				ViewBag.UsernameOrEmail = usernameOrEmail; // Preserve username
-				TempData["ErrorMessage"] = "Invalid username/email or password";
-				return View();
-			}
+            if (user == null)
+            {
+                ViewBag.UsernameOrEmail = usernameOrEmail; // Preserve username
+                TempData["ErrorMessage"] = "Invalid username/email or password";
+                return View();
+            }
 
-			// 2. Verify password
-			bool validPassword = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-			if (!validPassword)
-			{
-				ViewBag.UsernameOrEmail = usernameOrEmail; // Preserve username
-				TempData["ErrorMessage"] = "Invalid username/email or password";
-				return View();
-			}
+            // 2. Verify password
+            bool validPassword = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+            if (!validPassword)
+            {
+                ViewBag.UsernameOrEmail = usernameOrEmail; // Preserve username
+                TempData["ErrorMessage"] = "Invalid username/email or password";
+                return View();
+            }
 
-			// 3. Create claims for the user
-			var claims = new List<Claim>
-	{
-		new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-		new Claim(ClaimTypes.Name, user.Username),
-		new Claim(ClaimTypes.Email, user.Email),
-		new Claim(ClaimTypes.Role, user.Role)
-	};
+            // 3. Create claims for the user
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(ClaimTypes.Name, user.Username),
+        new Claim(ClaimTypes.Email, user.Email),
+        new Claim(ClaimTypes.Role, user.Role)
+    };
 
-			// 4. Create identity and principal
-			var identity = new ClaimsIdentity(claims, "Cookies");
-			var principal = new ClaimsPrincipal(identity);
+            // 4. Create identity and principal
+            var identity = new ClaimsIdentity(claims, "Cookies");
+            var principal = new ClaimsPrincipal(identity);
 
-			// 5. Sign in user (creates authentication cookie)
-			await HttpContext.SignInAsync("Cookies", principal);
-
-
-			if (user.Role == "Admin")
-			{
-
-				return RedirectToAction("Dashboard", "Admin");
-			}
-			else if (user.Role == "Staff") // ADD THIS
-			{
-				return RedirectToAction("Dashboard", "Staff"); // You need to create this
-			}
-			else
-			{
-				return RedirectToAction("Index", "Home");
-			}
-		}
+            // 5. Sign in user (creates authentication cookie)
+            await HttpContext.SignInAsync("Cookies", principal);
 
 
+            if (user.Role == "Admin")
+            {
 
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public async Task<IActionResult> Logout()
-		{
-			await HttpContext.SignOutAsync("Cookies");
-			return RedirectToAction("Login");
-		}
+                return RedirectToAction("Dashboard", "Admin");
+            }
+            else if (user.Role == "Staff") // ADD THIS
+            {
+                return RedirectToAction("Dashboard", "Staff"); // You need to create this
+            }
+            else
+            {
+                return RedirectToAction("Index", "Home");
+            }
+        }
 
-		[HttpPost]
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync("Cookies");
+            return RedirectToAction("Login");
+        }
+
+        [HttpPost]
         public async Task<IActionResult> Register(string username, string email, string password, string confirmPassword, int? servicePointId)
         {
             try
@@ -142,5 +142,5 @@ namespace Queue_Management_System.Controllers
 
 
         }
-	}
+    }
 }

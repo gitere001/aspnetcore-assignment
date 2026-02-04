@@ -6,94 +6,178 @@
 }
 
 <div class="container-fluid">
-    <!-- Status Alert -->
-    @if (!Model.ServicePointId.HasValue)
-    {
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <strong>No Service Point Assigned!</strong> Please contact your administrator to be assigned to a service
-            counter.
-        </div>
-    }
-    else if (!Model.ServicePointIsActive)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-pause-circle me-2"></i>
-            <strong>Service Point Offline!</strong> Your counter is currently offline. Click "Go Online" to start serving
-            customers.
-        </div>
-    }
-    else
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            <strong>Ready to Serve!</strong> Your service point <strong>@Model.ServicePointName</strong> is online and
-            ready.
-        </div>
-    }
-
-    <!-- Main Dashboard Cards -->
-    <div class="row">
-        <!-- Left Column: Current Ticket -->
-        <div class="col-lg-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-ticket-alt me-2"></i>Current Ticket
-                    </h5>
+    <!-- Service Point Selection Modal -->
+    <div class="modal fade" id="selectServicePointModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Select Your Service Point</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="card-body text-center p-4">
-                    <div id="currentTicket" class="mb-4">
-                        <div class="display-1 fw-bold text-primary mb-3" id="currentTicketNumber">
-                            ---
-                        </div>
-                        <div id="currentTicketStatus" class="mb-3">
-                            <span class="badge bg-secondary fs-6">No Active Ticket</span>
-                        </div>
-                        <div class="text-muted small" id="ticketTimer"></div>
+                <div class="modal-body">
+                    <div id="selectSpError" class="alert alert-danger d-none"></div>
+                    <div id="selectSpSuccess" class="alert alert-success d-none"></div>
+
+                    <div class="mb-3">
+                        <p class="text-muted">Choose the service point where you'll be working:</p>
+                        <select class="form-select form-select-lg" id="servicePointSelect">
+                            <option value="" selected disabled>-- Select Service Point --</option>
+                            <!-- Options will be loaded dynamically -->
+                        </select>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-success btn-lg" id="callNextBtn" disabled>
-                            <i class="fas fa-bullhorn me-2"></i>Call Next Ticket
-                        </button>
-                        <button class="btn btn-info btn-lg" id="startServingBtn" disabled>
-                            <i class="fas fa-handshake me-2"></i>Start Serving
-                        </button>
+                    <div id="servicePointInfo" class="d-none">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">Service Point Details</h6>
+                                <p><strong>Service:</strong> <span id="spServiceName">-</span></p>
+                                <p><strong>Status:</strong> <span id="spStatus" class="badge">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmSelectBtn" disabled>Select & Start
+                        Working</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column: Queue & Actions -->
-        <div class="col-lg-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-users me-2"></i>Waiting Queue
-                    </h5>
+        <!-- Status Alert -->
+        @if (!Model.ServicePointId.HasValue)
+        {
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>No Service Point Selected!</strong>
+                <button type="button" class="btn btn-sm btn-primary ms-2" id="selectSpBtn">
+                    <i class="fas fa-map-marker-alt me-1"></i>Select Service Point Now
+                </button>
+            </div>
+        }
+        else if (!Model.ServicePointIsActive)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-pause-circle me-2"></i>
+                <strong>Service Point Offline!</strong> Your counter is currently offline. Click "Go Online" to start serving
+                customers.
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Ready to Serve!</strong> Your service point <strong>@Model.ServicePointName</strong> is online and
+                ready.
+                <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="leaveSpBtn">
+                    <i class="fas fa-door-open me-1"></i>Leave Station
+                </button>
+            </div>
+        }
+
+        <!-- Main Dashboard Cards -->
+        <div class="row">
+            <!-- Left Column: Current Ticket -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-ticket-alt me-2"></i>Current Ticket
+                        </h5>
+                        <div>
+                            <small>@Model.ServicePointName</small>
+                        </div>
+                    </div>
+                    <div class="card-body text-center p-4">
+                        <div id="currentTicket" class="mb-4">
+                            <div class="display-1 fw-bold text-primary mb-3" id="currentTicketNumber">
+                                ---
+                            </div>
+                            <div id="currentTicketStatus" class="mb-3">
+                                <span class="badge bg-secondary fs-6">No Active Ticket</span>
+                            </div>
+                            <div class="text-muted small" id="ticketTimer"></div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success btn-lg" id="callNextBtn" disabled>
+                                <i class="fas fa-bullhorn me-2"></i>Call Next Ticket
+                            </button>
+                            <button class="btn btn-info btn-lg" id="startServingBtn" disabled>
+                                <i class="fas fa-handshake me-2"></i>Start Serving
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="text-center mb-4">
-                        <div class="display-4 fw-bold text-info" id="waitingCount">
-                            0
-                        </div>
-                        <div class="text-muted">Customers Waiting</div>
-                    </div>
+            </div>
 
-                    <div id="queueList" class="mb-4" style="max-height: 300px; overflow-y: auto;">
-                        <div class="text-center text-muted py-3">
-                            <i class="fas fa-inbox fa-2x mb-2"></i>
-                            <p>No customers waiting</p>
+            <!-- Right Column: Queue & Actions -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users me-2"></i>Waiting Queue
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <div class="display-4 fw-bold text-info" id="waitingCount">
+                                0
+                            </div>
+                            <div class="text-muted">Customers Waiting</div>
+                        </div>
+
+                        <div id="queueList" class="mb-4" style="max-height: 300px; overflow-y: auto;">
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>No customers waiting</p>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-success btn-lg" id="finishBtn" disabled>
+                                <i class="fas fa-check-circle me-2"></i>Mark as Finished
+                            </button>
+                            <button class="btn btn-outline-warning btn-lg" id="transferBtn" disabled>
+                            <i class="fas fa-exchange-alt me-2"></i>Transfer
+                            </button>
+                            <button class="btn btn-outline-danger btn-lg" id="noShowBtn" disabled>
+                                <i class="fas fa-user-times me-2"></i>Mark as No Show
+                            </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-success btn-lg" id="finishBtn" disabled>
-                            <i class="fas fa-check-circle me-2"></i>Mark as Finished
-                        </button>
-                        <button class="btn btn-outline-danger btn-lg" id="noShowBtn" disabled>
-                            <i class="fas fa-user-times me-2"></i>Mark as No Show
+        <!-- Quick Stats -->
+        <div class="row mt-4">
+            <div class="col-md-4 mb-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-muted small mb-2">Today's Served</div>
+                        <div class="h3 fw-bold text-primary" id="todayServed">0</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-muted small mb-2">Average Wait Time</div>
+                        <div class="h3 fw-bold text-info" id="avgWaitTime">0 min</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-muted small mb-2">Service Point Status</div>
+                        <button class="btn btn-lg w-100" id="toggleStatusBtn"
+                                style="background-color: @(Model.ServicePointIsActive ? "#28a745" : "#dc3545"); color: white; border: none;"
+                            @(!Model.ServicePointId.HasValue ? "disabled" : "")>
+                            <i class="fas fa-power-off me-2"></i>
+                            <span id="toggleStatusText">@(Model.ServicePointIsActive ? "GO OFFLINE" : "GO ONLINE")</span>
                         </button>
                     </div>
                 </div>
@@ -101,478 +185,832 @@
         </div>
     </div>
 
-    <!-- Quick Stats -->
-    <div class="row mt-4">
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="text-muted small mb-2">Today's Served</div>
-                    <div class="h3 fw-bold text-primary" id="todayServed">0</div>
+    <!-- Transfer Ticket Modal -->
+<div class="modal fade" id="transferTicketModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Transfer Ticket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="transferError" class="alert alert-danger d-none"></div>
+                <div id="transferSuccess" class="alert alert-success d-none"></div>
+
+                <div class="mb-3">
+                    <p class="text-muted">Transfer current ticket to another service:</p>
+                    <select class="form-select form-select-lg" id="transferServicePointSelect">
+                        <option value="" selected disabled>-- Select Destination --</option>
+                        <!-- Options will be loaded dynamically -->
+                    </select>
+                </div>
+
+                <div id="transferInfo" class="d-none">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Transfer Details</h6>
+                            <p><strong>Current Ticket:</strong> <span id="transferTicketNumber">-</span></p>
+                            <p><strong>Destination:</strong> <span id="transferDestination">-</span></p>
+                            <p><strong>Service:</strong> <span id="transferService">-</span></p>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="text-muted small mb-2">Average Wait Time</div>
-                    <div class="h3 fw-bold text-info" id="avgWaitTime">0 min</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="text-muted small mb-2">Service Point Status</div>
-                    <button class="btn btn-lg w-100" id="toggleStatusBtn"
-                            style="background-color: @(Model.ServicePointIsActive ? "#28a745" : "#dc3545"); color: white; border: none;"
-                        @(!Model.ServicePointId.HasValue ? "disabled" : "")>
-                        <i class="fas fa-power-off me-2"></i>
-                        <span id="toggleStatusText">@(Model.ServicePointIsActive ? "GO OFFLINE" : "GO ONLINE")</span>
-                    </button>
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmTransferBtn" disabled>Confirm Transfer</button>
             </div>
         </div>
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        // State management
-        let currentTicket = null;
-        let currentStatus = null;
-        let isOnline = @(Model.ServicePointIsActive ? "true" : "false");
-        let pollingInterval = null;
-        let ticketTimerInterval = null;
+    @section Scripts {
+        <script>
+                // State management
+                let currentTicket = null;
+                let currentStatus = null;
+                let isOnline = @(Model.ServicePointIsActive ? "true" : "false");
+                let pollingInterval = null;
+                let ticketTimerInterval = null;
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log('Dashboard initialized');
-            updateButtonStates();
+                // Initialize on page load
+                document.addEventListener('DOMContentLoaded', function () {
+                    console.log('Dashboard initialized');
+                    updateButtonStates();
 
-            if (isOnline) {
-                startPolling();
-            }
+                    if (isOnline) {
+                        startPolling();
+                    }
 
-            // Attach event listeners
-            document.getElementById('toggleStatusBtn').addEventListener('click', toggleOnlineStatus);
-            document.getElementById('callNextBtn').addEventListener('click', callNextTicket);
-            document.getElementById('startServingBtn').addEventListener('click', startServing);
-            document.getElementById('finishBtn').addEventListener('click', finishTicket);
-            document.getElementById('noShowBtn').addEventListener('click', markAsNoShow);
-        });
+                    // Attach event listeners
+                    document.getElementById('toggleStatusBtn').addEventListener('click', toggleOnlineStatus);
+                    document.getElementById('callNextBtn').addEventListener('click', callNextTicket);
+                    document.getElementById('startServingBtn').addEventListener('click', startServing);
+                    document.getElementById('finishBtn').addEventListener('click', finishTicket);
+                    document.getElementById('noShowBtn').addEventListener('click', markAsNoShow);
+                    document.getElementById('transferBtn').addEventListener('click', showTransferModal);
 
-        // Polling function
-        function startPolling() {
-            console.log('Starting polling...');
-            fetchQueue(); // Immediate fetch
-            pollingInterval = setInterval(fetchQueue, 3000); // Every 3 seconds
-        }
+                    // NEW: Service Point Selection listeners
+                    const selectSpBtn = document.getElementById('selectSpBtn');
 
-        function stopPolling() {
-            console.log('Stopping polling...');
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-                pollingInterval = null;
-            }
-        }
 
-        // Fetch queue
-        async function fetchQueue() {
-            try {
-                const response = await fetch('/Staff/GetQueue');
-                const data = await response.json();
+                    if (selectSpBtn) {
+                        selectSpBtn.addEventListener('click', showServicePointModal);
+                    }
 
-                if (data.error) {
-                    console.error('Error fetching queue:', data.error);
-                    return;
+                   const leaveSpBtn = document.getElementById('leaveSpBtn');
+                    if (leaveSpBtn) {
+                        leaveSpBtn.addEventListener('click', leaveServicePoint);
+                    }
+
+                    document.getElementById('servicePointSelect').addEventListener('change', onServicePointSelected);
+                    document.getElementById('confirmSelectBtn').addEventListener('click', confirmServicePointSelection);
+                });
+
+                // Show service point selection modal
+                async function showServicePointModal() {
+                    const errorDiv = document.getElementById('selectSpError');
+                    const successDiv = document.getElementById('selectSpSuccess');
+                    const select = document.getElementById('servicePointSelect');
+                    const confirmBtn = document.getElementById('confirmSelectBtn');
+                    const infoDiv = document.getElementById('servicePointInfo');
+
+                    // Clear previous
+                    errorDiv.classList.add('d-none');
+                    successDiv.classList.add('d-none');
+                    infoDiv.classList.add('d-none');
+                    select.innerHTML = '<option value="" selected disabled>-- Loading service points... --</option>';
+                    confirmBtn.disabled = true;
+
+                    try {
+                        // Load available service points
+                        const response = await fetch('/Staff/GetServicePointsForAssignment');
+                        const data = await response.json();
+
+                        if (data.error) {
+                            errorDiv.textContent = data.error;
+                            errorDiv.classList.remove('d-none');
+                            return;
+                        }
+
+                        // Populate dropdown
+                        select.innerHTML = '<option value="" selected disabled>-- Select Service Point --</option>';
+
+                        data.forEach(point => {
+                            // Only show active and available service points
+                            if (point.isActive && !point.isAssigned) {
+                                const option = document.createElement('option');
+                                option.value = point.id;
+                                option.textContent = `${point.name} (Available)`;
+                                option.setAttribute('data-name', point.name);
+                                option.setAttribute('data-active', point.isActive);
+                                option.setAttribute('data-assigned', point.isAssigned);
+                                select.appendChild(option);
+                            }
+                        });
+
+                        // Check if any options were added
+                        if (select.options.length === 1) {
+                            select.innerHTML = '<option value="" selected disabled>-- No available service points --</option>';
+                        }
+
+                        // Show modal
+                        new bootstrap.Modal(document.getElementById('selectServicePointModal')).show();
+
+                    } catch (error) {
+                        console.error('Error loading service points:', error);
+                        errorDiv.textContent = 'Failed to load service points. Please try again.';
+                        errorDiv.classList.remove('d-none');
+                    }
                 }
 
-                // Separate waiting tickets from active tickets
-                const waitingTickets = data.tickets.filter(t => t.status === 'Waiting');
-                const myActiveTickets = data.tickets.filter(t =>
-                    t.status === 'Called' || t.status === 'Serving'
-                );
+                // When service point is selected from dropdown
+                function onServicePointSelected(event) {
+                    const select = event.target;
+                    const selectedOption = select.options[select.selectedIndex];
+                    const confirmBtn = document.getElementById('confirmSelectBtn');
+                    const infoDiv = document.getElementById('servicePointInfo');
 
-                // Update waiting queue (ONLY waiting tickets)
-                updateQueueDisplay(waitingTickets);
+                    if (select.value === "") {
+                        confirmBtn.disabled = true;
+                        infoDiv.classList.add('d-none');
+                        return;
+                    }
 
-                // Update current ticket if I have one
-                if (myActiveTickets.length > 0) {
-                    currentTicket = myActiveTickets[0].ticketNumber;
-                    currentStatus = myActiveTickets[0].status;
-                    updateCurrentTicketDisplay();
-                } else {
-                    // No active ticket
+                    // Update info display
+                    document.getElementById('spServiceName').textContent = selectedOption.getAttribute('data-name');
+
+                    const isActive = selectedOption.getAttribute('data-active') === 'true';
+                    const statusBadge = document.getElementById('spStatus');
+                    statusBadge.textContent = isActive ? 'Active' : 'Inactive';
+                    statusBadge.className = `badge bg-${isActive ? 'success' : 'danger'}`;
+
+                    // Show info and enable confirm button
+                    infoDiv.classList.remove('d-none');
+                    confirmBtn.disabled = false;
+                }
+
+                // Confirm service point selection
+                async function confirmServicePointSelection() {
+                    const select = document.getElementById('servicePointSelect');
+                    const errorDiv = document.getElementById('selectSpError');
+                    const successDiv = document.getElementById('selectSpSuccess');
+                    const confirmBtn = document.getElementById('confirmSelectBtn');
+
+                    if (select.value === "") {
+                        errorDiv.textContent = 'Please select a service point';
+                        errorDiv.classList.remove('d-none');
+                        return;
+                    }
+
+                    const servicePointId = parseInt(select.value);
+
+                    // Show loading
+                    confirmBtn.disabled = true;
+                    const originalText = confirmBtn.innerHTML;
+                    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Selecting...';
+
+                    try {
+                        // Call API to select service point
+                        const response = await fetch('/Staff/SelectServicePoint', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                servicePointId: servicePointId
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            // Success
+                            successDiv.textContent = data.message;
+                            successDiv.classList.remove('d-none');
+
+                            // Close modal and reload page after 1.5 seconds
+                            setTimeout(() => {
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('selectServicePointModal'));
+                                modal.hide();
+                                window.location.reload();
+                            }, 1500);
+
+                        } else {
+                            // Error
+                            errorDiv.textContent = data.error || 'Failed to select service point';
+                            errorDiv.classList.remove('d-none');
+                            confirmBtn.disabled = false;
+                            confirmBtn.innerHTML = originalText;
+                        }
+
+                    } catch (error) {
+                        console.error('Error selecting service point:', error);
+                        errorDiv.textContent = 'Failed to select service point. Please try again.';
+                        errorDiv.classList.remove('d-none');
+                        confirmBtn.disabled = false;
+                        confirmBtn.innerHTML = originalText;
+                    }
+                }
+
+                // Polling function
+                function startPolling() {
+                    console.log('Starting polling...');
+                    fetchQueue(); // Immediate fetch
+                    pollingInterval = setInterval(fetchQueue, 3000); // Every 3 seconds
+                }
+
+                function stopPolling() {
+                    console.log('Stopping polling...');
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+                    }
+                }
+
+                // Fetch queue
+                async function fetchQueue() {
+                    try {
+                        const response = await fetch('/Staff/GetQueue');
+                        const data = await response.json();
+
+                        if (data.error) {
+                            console.error('Error fetching queue:', data.error);
+                            return;
+                        }
+
+                        // Separate waiting tickets from active tickets
+                        const waitingTickets = data.tickets.filter(t => t.status === 'Waiting');
+                        const myActiveTickets = data.tickets.filter(t =>
+                            t.status === 'Called' || t.status === 'Serving'
+                        );
+
+                        // Update waiting queue (ONLY waiting tickets)
+                        updateQueueDisplay(waitingTickets);
+
+                        // Update current ticket if I have one
+                        if (myActiveTickets.length > 0) {
+                            currentTicket = myActiveTickets[0].ticketNumber;
+                            currentStatus = myActiveTickets[0].status;
+                            updateCurrentTicketDisplay();
+                        } else {
+                            // No active ticket
+                            currentTicket = null;
+                            currentStatus = null;
+                            updateCurrentTicketDisplay();
+                        }
+
+                        updateButtonStates();
+
+                    } catch (error) {
+                        console.error('Error fetching queue:', error);
+                    }
+                }
+
+                // Update queue display - ONLY shows waiting tickets
+                function updateQueueDisplay(tickets) {
+                    const queueList = document.getElementById('queueList');
+                    const waitingCount = document.getElementById('waitingCount');
+
+                    // Filter to show ONLY waiting tickets
+                    const waitingTickets = tickets.filter(ticket => ticket.status === 'Waiting');
+                    waitingCount.textContent = waitingTickets.length;
+
+                    if (waitingTickets.length === 0) {
+                        queueList.innerHTML = `
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>No customers waiting</p>
+                            </div>
+                        `;
+                    } else {
+                        let html = '<div class="list-group">';
+                        waitingTickets.forEach((ticket, index) => {
+                            const waitTime = getWaitTime(ticket.createdAt);
+                            html += `
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-primary me-2">${index + 1}</span>
+                                        <strong>${ticket.ticketNumber}</strong>
+                                    </div>
+                                    <small class="text-muted">Waiting ${waitTime}</small>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        queueList.innerHTML = html;
+                    }
+                }
+
+                // Calculate wait time
+                function getWaitTime(createdAt) {
+                    const now = new Date();
+                    const created = new Date(createdAt);
+                    const diffMs = now - created;
+                    const diffMins = Math.floor(diffMs / 60000);
+
+                    if (diffMins < 1) return 'just now';
+                    if (diffMins === 1) return '1 min';
+                    return `${diffMins} mins`;
+                }
+
+                // Toggle online/offline status
+                async function toggleOnlineStatus() {
+                    const btn = document.getElementById('toggleStatusBtn');
+                    const originalHtml = btn.innerHTML; // Save original HTML
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+
+                    try {
+                        const response = await fetch('/Staff/ToggleAvailability', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            isOnline = data.isActive;
+
+                            // Update button - rebuild entire HTML (don't try to find the span)
+                            btn.innerHTML = `<i class="fas fa-power-off me-2"></i>${isOnline ? 'GO OFFLINE' : 'GO ONLINE'}`;
+
+                            // CORRECT: Online = GREEN, Offline = RED
+                            btn.style.backgroundColor = isOnline ? '#28a745' : '#dc3545';
+
+                            // Start/stop polling
+                            if (isOnline) {
+                                startPolling();
+                            } else {
+                                stopPolling();
+                                // Reset current ticket when going offline
+                                clearCurrentTicket();
+                            }
+
+                            updateButtonStates();
+                            showNotification(isOnline ? 'You are now ONLINE' : 'You are now OFFLINE', 'success');
+
+                            // Reload page after 800ms to sync all elements
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 800);
+                        } else {
+                            // If API returns error, restore original button
+                            btn.innerHTML = originalHtml;
+                            showNotification('Failed to update status', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error toggling status:', error);
+                        // Restore original button on any error
+                        btn.innerHTML = originalHtml;
+                        showNotification('Failed to update status', 'error');
+                    } finally {
+                        btn.disabled = false;
+                    }
+                }
+
+                // Call next ticket
+                async function callNextTicket() {
+                    const btn = document.getElementById('callNextBtn');
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Calling...';
+
+                    try {
+                        const response = await fetch('/Staff/CallNext', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            currentTicket = data.ticketNumber;
+                            currentStatus = 'Called';
+
+                            updateCurrentTicketDisplay();
+                            updateButtonStates();
+                            fetchQueue(); // Refresh queue immediately
+
+                            showNotification(`Called: ${currentTicket}`, 'success');
+                        } else {
+                            showNotification(data.message || 'No tickets waiting', 'info');
+                        }
+                    } catch (error) {
+                        console.error('Error calling next:', error);
+                        showNotification('Failed to call next ticket', 'error');
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-bullhorn me-2"></i>Call Next Ticket';
+                        updateButtonStates();
+                    }
+                }
+
+                // Start serving
+                async function startServing() {
+                    if (!currentTicket) return;
+
+                    const btn = document.getElementById('startServingBtn');
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting...';
+
+                    try {
+                        const response = await fetch('/Staff/UpdateTicketStatus', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                ticketNumber: currentTicket,
+                                newStatus: 'Serving'
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            currentStatus = 'Serving';
+                            updateCurrentTicketDisplay();
+                            updateButtonStates();
+                            fetchQueue(); // Refresh queue immediately
+                            showNotification('Started serving customer', 'success');
+                        } else {
+                            showNotification(data.message || 'Failed to update status', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error starting service:', error);
+                        showNotification('Failed to start serving', 'error');
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-handshake me-2"></i>Start Serving';
+                        updateButtonStates();
+                    }
+                }
+
+                // Finish ticket
+                async function finishTicket() {
+                    if (!currentTicket) return;
+
+                    const btn = document.getElementById('finishBtn');
+                    const originalHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Finishing...';
+
+                    try {
+                        const response = await fetch('/Staff/UpdateTicketStatus', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                ticketNumber: currentTicket,
+                                newStatus: 'Finished'
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            showNotification(`Ticket ${currentTicket} completed!`, 'success');
+                            clearCurrentTicket();
+                            fetchQueue(); // Refresh queue
+                        } else {
+                            showNotification(data.message || 'Failed to finish ticket', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error finishing ticket:', error);
+                        showNotification('Failed to finish ticket', 'error');
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        updateButtonStates();
+                    }
+                }
+
+                // Mark as no show
+                async function markAsNoShow() {
+                    if (!currentTicket) return;
+
+                    // Show confirmation
+                    if (!confirm(`Are you sure you want to mark ${currentTicket} as NO SHOW?\n\nThis customer will not be served.`)) {
+                        return;
+                    }
+
+                    const btn = document.getElementById('noShowBtn');
+                    const originalHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+
+                    try {
+                        const response = await fetch('/Staff/UpdateTicketStatus', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                ticketNumber: currentTicket,
+                                newStatus: 'NoShow'
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            showNotification(`Ticket ${currentTicket} marked as No Show`, 'warning');
+                            clearCurrentTicket();
+                            fetchQueue(); // Refresh queue
+                        } else {
+                            showNotification(data.message || 'Failed to mark as no show', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error marking no show:', error);
+                        showNotification('Failed to mark as no show', 'error');
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        updateButtonStates();
+                    }
+                }
+
+                // Update current ticket display
+                function updateCurrentTicketDisplay() {
+                    const ticketNumber = document.getElementById('currentTicketNumber');
+                    const ticketStatus = document.getElementById('currentTicketStatus');
+
+                    if (currentTicket) {
+                        ticketNumber.textContent = currentTicket;
+
+                        let badgeClass = 'bg-secondary';
+                        let statusText = 'Unknown';
+
+                        if (currentStatus === 'Called') {
+                            badgeClass = 'bg-warning';
+                            statusText = 'Called - Waiting for Customer';
+                        } else if (currentStatus === 'Serving') {
+                            badgeClass = 'bg-success';
+                            statusText = 'Currently Serving';
+                        }
+
+                        ticketStatus.innerHTML = `<span class="badge ${badgeClass} fs-6">${statusText}</span>`;
+                    } else {
+                        ticketNumber.textContent = '---';
+                        ticketStatus.innerHTML = `<span class="badge bg-secondary fs-6">No Active Ticket</span>`;
+                    }
+                }
+
+                // Clear current ticket
+                function clearCurrentTicket() {
                     currentTicket = null;
                     currentStatus = null;
                     updateCurrentTicketDisplay();
+                    updateButtonStates();
                 }
 
-                updateButtonStates();
+                // Update button states based on current state
+                function updateButtonStates() {
+                    const callNextBtn = document.getElementById('callNextBtn');
+                    const startServingBtn = document.getElementById('startServingBtn');
+                    const finishBtn = document.getElementById('finishBtn');
+                    const noShowBtn = document.getElementById('noShowBtn');
 
-            } catch (error) {
-                console.error('Error fetching queue:', error);
-            }
-        }
+                    transferBtn.style.display = 'none';
 
-        // Update queue display - ONLY shows waiting tickets
-        function updateQueueDisplay(tickets) {
-            const queueList = document.getElementById('queueList');
-            const waitingCount = document.getElementById('waitingCount');
+                    // Default: disable all action buttons
+                    callNextBtn.disabled = true;
+                    startServingBtn.disabled = true;
+                    finishBtn.disabled = true;
+                    noShowBtn.disabled = true;
 
-            // Filter to show ONLY waiting tickets
-            const waitingTickets = tickets.filter(ticket => ticket.status === 'Waiting');
-            waitingCount.textContent = waitingTickets.length;
+                    // If offline, only Call Next can be enabled (but it won't work until online)
+                    if (!isOnline) {
+                        return;
+                    }
 
-            if (waitingTickets.length === 0) {
-                queueList.innerHTML = `
-                    <div class="text-center text-muted py-3">
-                        <i class="fas fa-inbox fa-2x mb-2"></i>
-                        <p>No customers waiting</p>
-                    </div>
-                `;
-            } else {
-                let html = '<div class="list-group">';
-                waitingTickets.forEach((ticket, index) => {
-                    const waitTime = getWaitTime(ticket.createdAt);
-                    html += `
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="badge bg-primary me-2">${index + 1}</span>
-                                <strong>${ticket.ticketNumber}</strong>
-                            </div>
-                            <small class="text-muted">Waiting ${waitTime}</small>
-                        </div>
+                    // Online and no current ticket - can call next
+                    if (!currentTicket) {
+                        callNextBtn.disabled = false;
+                    }
+                    // Has ticket in "Called" status
+                    else if (currentStatus === 'Called') {
+                        startServingBtn.disabled = false; // Can start serving
+                        noShowBtn.disabled = false; // Can mark as no show
+                    }
+                    // Has ticket in "Serving" status
+                    else if (currentStatus === 'Serving') {
+                        finishBtn.disabled = false; // Can finish
+                        transferBtn.style.display = 'block';
+                         transferBtn.disabled = false; // Can transfer
+                        noShowBtn.disabled = true; // CANNOT mark as no show while serving
+
+                    }
+                }
+
+                // Show notification
+                function showNotification(message, type = 'info') {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+                    alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
+                    alertDiv.innerHTML = `
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     `;
-                });
-                html += '</div>';
-                queueList.innerHTML = html;
-            }
-        }
+                    document.body.appendChild(alertDiv);
 
-        // Calculate wait time
-        function getWaitTime(createdAt) {
-            const now = new Date();
-            const created = new Date(createdAt);
-            const diffMs = now - created;
-            const diffMins = Math.floor(diffMs / 60000);
-
-            if (diffMins < 1) return 'just now';
-            if (diffMins === 1) return '1 min';
-            return `${diffMins} mins`;
-        }
-
-        // Toggle online/offline status
-        async function toggleOnlineStatus() {
-            const btn = document.getElementById('toggleStatusBtn');
-            const originalHtml = btn.innerHTML; // Save original HTML
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
-
-            try {
-                const response = await fetch('/Staff/ToggleAvailability', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    isOnline = data.isActive;
-
-                    // Update button - rebuild entire HTML (don't try to find the span)
-                    btn.innerHTML = `<i class="fas fa-power-off me-2"></i>${isOnline ? 'GO OFFLINE' : 'GO ONLINE'}`;
-
-                    // CORRECT: Online = GREEN, Offline = RED
-                    btn.style.backgroundColor = isOnline ? '#28a745' : '#dc3545';
-
-                    // Start/stop polling
-                    if (isOnline) {
-                        startPolling();
-                    } else {
-                        stopPolling();
-                        // Reset current ticket when going offline
-                        clearCurrentTicket();
-                    }
-
-                    updateButtonStates();
-                    showNotification(isOnline ? 'You are now ONLINE' : 'You are now OFFLINE', 'success');
-
-                    // Reload page after 800ms to sync all elements
                     setTimeout(() => {
-                        window.location.reload();
-                    }, 800);
-                } else {
-                    // If API returns error, restore original button
-                    btn.innerHTML = originalHtml;
-                    showNotification('Failed to update status', 'error');
-                }
-            } catch (error) {
-                console.error('Error toggling status:', error);
-                // Restore original button on any error
-                btn.innerHTML = originalHtml;
-                showNotification('Failed to update status', 'error');
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        // Call next ticket
-        async function callNextTicket() {
-            const btn = document.getElementById('callNextBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Calling...';
-
-            try {
-                const response = await fetch('/Staff/CallNext', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    currentTicket = data.ticketNumber;
-                    currentStatus = 'Called';
-
-                    updateCurrentTicketDisplay();
-                    updateButtonStates();
-                    fetchQueue(); // Refresh queue immediately
-
-                    showNotification(`Called: ${currentTicket}`, 'success');
-                } else {
-                    showNotification(data.message || 'No tickets waiting', 'info');
-                }
-            } catch (error) {
-                console.error('Error calling next:', error);
-                showNotification('Failed to call next ticket', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-bullhorn me-2"></i>Call Next Ticket';
-                updateButtonStates();
-            }
-        }
-
-        // Start serving
-        async function startServing() {
-            if (!currentTicket) return;
-
-            const btn = document.getElementById('startServingBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting...';
-
-            try {
-                const response = await fetch('/Staff/UpdateTicketStatus', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        ticketNumber: currentTicket,
-                        newStatus: 'Serving'
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    currentStatus = 'Serving';
-                    updateCurrentTicketDisplay();
-                    updateButtonStates();
-                    fetchQueue(); // Refresh queue immediately
-                    showNotification('Started serving customer', 'success');
-                } else {
-                    showNotification(data.message || 'Failed to update status', 'error');
-                }
-            } catch (error) {
-                console.error('Error starting service:', error);
-                showNotification('Failed to start serving', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-handshake me-2"></i>Start Serving';
-                updateButtonStates();
-            }
-        }
-
-        // Finish ticket
-        async function finishTicket() {
-            if (!currentTicket) return;
-
-            const btn = document.getElementById('finishBtn');
-            const originalHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Finishing...';
-
-            try {
-                const response = await fetch('/Staff/UpdateTicketStatus', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        ticketNumber: currentTicket,
-                        newStatus: 'Finished'
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showNotification(`Ticket ${currentTicket} completed!`, 'success');
-                    clearCurrentTicket();
-                    fetchQueue(); // Refresh queue
-                } else {
-                    showNotification(data.message || 'Failed to finish ticket', 'error');
-                }
-            } catch (error) {
-                console.error('Error finishing ticket:', error);
-                showNotification('Failed to finish ticket', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHtml;
-                updateButtonStates();
-            }
-        }
-
-        // Mark as no show
-        async function markAsNoShow() {
-            if (!currentTicket) return;
-
-            // Show confirmation
-            if (!confirm(`Are you sure you want to mark ${currentTicket} as NO SHOW?\n\nThis customer will not be served.`)) {
-                return;
-            }
-
-            const btn = document.getElementById('noShowBtn');
-            const originalHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
-
-            try {
-                const response = await fetch('/Staff/UpdateTicketStatus', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        ticketNumber: currentTicket,
-                        newStatus: 'NoShow'
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showNotification(`Ticket ${currentTicket} marked as No Show`, 'warning');
-                    clearCurrentTicket();
-                    fetchQueue(); // Refresh queue
-                } else {
-                    showNotification(data.message || 'Failed to mark as no show', 'error');
-                }
-            } catch (error) {
-                console.error('Error marking no show:', error);
-                showNotification('Failed to mark as no show', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHtml;
-                updateButtonStates();
-            }
-        }
-
-        // Update current ticket display
-        function updateCurrentTicketDisplay() {
-            const ticketNumber = document.getElementById('currentTicketNumber');
-            const ticketStatus = document.getElementById('currentTicketStatus');
-
-            if (currentTicket) {
-                ticketNumber.textContent = currentTicket;
-
-                let badgeClass = 'bg-secondary';
-                let statusText = 'Unknown';
-
-                if (currentStatus === 'Called') {
-                    badgeClass = 'bg-warning';
-                    statusText = 'Called - Waiting for Customer';
-                } else if (currentStatus === 'Serving') {
-                    badgeClass = 'bg-success';
-                    statusText = 'Currently Serving';
+                        alertDiv.remove();
+                    }, 5000);
                 }
 
-                ticketStatus.innerHTML = `<span class="badge ${badgeClass} fs-6">${statusText}</span>`;
-            } else {
-                ticketNumber.textContent = '---';
-                ticketStatus.innerHTML = `<span class="badge bg-secondary fs-6">No Active Ticket</span>`;
-            }
-        }
+                // Leave Service Point
+async function leaveServicePoint() {
+    const btn = document.getElementById('leaveSpBtn');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Leaving...';
 
-        // Clear current ticket
-        function clearCurrentTicket() {
-            currentTicket = null;
-            currentStatus = null;
-            updateCurrentTicketDisplay();
-            updateButtonStates();
-        }
-
-        // Update button states based on current state
-        function updateButtonStates() {
-            const callNextBtn = document.getElementById('callNextBtn');
-            const startServingBtn = document.getElementById('startServingBtn');
-            const finishBtn = document.getElementById('finishBtn');
-            const noShowBtn = document.getElementById('noShowBtn');
-
-            // Default: disable all action buttons
-            callNextBtn.disabled = true;
-            startServingBtn.disabled = true;
-            finishBtn.disabled = true;
-            noShowBtn.disabled = true;
-
-            // If offline, only Call Next can be enabled (but it won't work until online)
-            if (!isOnline) {
-                return;
-            }
-
-            // Online and no current ticket - can call next
-            if (!currentTicket) {
-                callNextBtn.disabled = false;
-            }
-            // Has ticket in "Called" status
-            else if (currentStatus === 'Called') {
-                startServingBtn.disabled = false; // Can start serving
-                noShowBtn.disabled = false; // Can mark as no show
-            }
-            // Has ticket in "Serving" status
-            else if (currentStatus === 'Serving') {
-                finishBtn.disabled = false; // Can finish
-                noShowBtn.disabled = true; // CANNOT mark as no show while serving
-            }
-        }
-
-        // Show notification
-        function showNotification(message, type = 'info') {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
-            alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.body.appendChild(alertDiv);
-
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 5000);
-        }
-
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', function () {
-            stopPolling();
-            if (ticketTimerInterval) {
-                clearInterval(ticketTimerInterval);
+    try {
+        const response = await fetch('/Staff/LeaveServicePoint', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
             }
         });
-    </script>
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification(data.message, 'success');
+            // Reload page after 1 second
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification(data.error || 'Failed to leave station', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+            } catch (error) {
+                console.error('Error leaving station:', error);
+                showNotification('Failed to leave station', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+                // Cleanup on page unload
+                window.addEventListener('beforeunload', function () {
+                    stopPolling();
+                    if (ticketTimerInterval) {
+                        clearInterval(ticketTimerInterval);
+                    }
+                });
+
+                // Show transfer modal
+async function showTransferModal() {
+    if (!currentTicket || currentStatus !== 'Serving') return;
+
+    const errorDiv = document.getElementById('transferError');
+    const successDiv = document.getElementById('transferSuccess');
+    const select = document.getElementById('transferServicePointSelect');
+    const confirmBtn = document.getElementById('confirmTransferBtn');
+    const infoDiv = document.getElementById('transferInfo');
+
+    // Clear previous
+    errorDiv.classList.add('d-none');
+    successDiv.classList.add('d-none');
+    infoDiv.classList.add('d-none');
+    select.innerHTML = '<option value="" selected disabled>-- Loading available service points... --</option>';
+    confirmBtn.disabled = true;
+
+    // Set current ticket
+    document.getElementById('transferTicketNumber').textContent = currentTicket;
+
+    try {
+        // Load available service points
+        const response = await fetch('/Staff/GetServicePointsForAssignment');
+        const data = await response.json();
+        console.log('Available service points for transfer:', data);
+
+        if (data.error) {
+            errorDiv.textContent = data.error;
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        // Populate dropdown (exclude current service point)
+        select.innerHTML = '<option value="" selected disabled>-- Select Destination --</option>';
+
+        let hasOptions = false;
+        data.forEach(point => {
+            // Show active service points that are NOT the current one
+            if (point.isActive && point.id !== @(Model.ServicePointId ?? 0)) {
+                const option = document.createElement('option');
+                option.value = point.id;
+                option.textContent = `${point.name} (${point.isAssigned ? 'Occupied' : 'Available'})`;
+                option.setAttribute('data-name', point.name);
+                select.appendChild(option);
+                hasOptions = true;
+            }
+        });
+
+        if (!hasOptions) {
+            select.innerHTML = '<option value="" selected disabled>-- No available service points --</option>';
+        }
+
+        // Show modal
+        new bootstrap.Modal(document.getElementById('transferTicketModal')).show();
+
+    } catch (error) {
+        console.error('Error loading service points:', error);
+        errorDiv.textContent = 'Failed to load service points. Please try again.';
+        errorDiv.classList.remove('d-none');
+    }
 }
+
+// When destination is selected
+document.getElementById('transferServicePointSelect').addEventListener('change', function(event) {
+    const select = event.target;
+    const confirmBtn = document.getElementById('confirmTransferBtn');
+    const infoDiv = document.getElementById('transferInfo');
+
+    if (select.value === "") {
+        confirmBtn.disabled = true;
+        infoDiv.classList.add('d-none');
+        return;
+    }
+
+    const selectedOption = select.options[select.selectedIndex];
+    document.getElementById('transferDestination').textContent = selectedOption.getAttribute('data-name');
+    document.getElementById('transferService').textContent = selectedOption.getAttribute('data-service') || 'General';
+
+    infoDiv.classList.remove('d-none');
+    confirmBtn.disabled = false;
+});
+
+// Confirm transfer
+document.getElementById('confirmTransferBtn').addEventListener('click', async function() {
+    const select = document.getElementById('transferServicePointSelect');
+    const errorDiv = document.getElementById('transferError');
+    const successDiv = document.getElementById('transferSuccess');
+    const confirmBtn = document.getElementById('confirmTransferBtn');
+
+    if (select.value === "" || !currentTicket) {
+        errorDiv.textContent = 'Please select a destination';
+        errorDiv.classList.remove('d-none');
+        return;
+    }
+
+    const servicePointId = parseInt(select.value);
+
+    // Show loading
+    confirmBtn.disabled = true;
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Transferring...';
+
+    try {
+        // Call your existing TransferTicket API
+        const response = await fetch('/Staff/TransferTicket', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                servicePointId: servicePointId
+            })
+        });
+
+        const data = await response.json();
+
+       if (data.success) {
+    // Success
+    successDiv.textContent = data.message;
+    successDiv.classList.remove('d-none');
+
+    // Close modal and reload
+    setTimeout(() => {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('transferTicketModal'));
+        modal.hide();
+        showNotification(data.message, 'success');
+        window.location.reload();  // This is the only line you need to add
+    }, 1500);
+} else {
+            // Error
+            errorDiv.textContent = data.error || 'Failed to transfer ticket';
+            errorDiv.classList.remove('d-none');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalText;
+        }
+
+    } catch (error) {
+        console.error('Error transferring ticket:', error);
+        errorDiv.textContent = 'Failed to transfer ticket. Please try again.';
+        errorDiv.classList.remove('d-none');
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = originalText;
+    }
+});
+        </script>
+    }

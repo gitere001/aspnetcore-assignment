@@ -273,44 +273,8 @@ namespace Queue_Management_System.Controllers
             return Json(points);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignStaffToServicePoint(int userId, int? servicePointId)
-        {
-            try
-            {
-                // Validation
-                var user = await _userRepository.GetUserById(userId); // Need to add this method
-                if (user == null)
-                {
-                    return BadRequest("User not found");
-                }
 
-                if (user.Role != "Staff")
-                {
-                    return BadRequest("Only staff members can be assigned to service points");
-                }
 
-                // If assigning (not unassigning), check service point exists
-                if (servicePointId.HasValue)
-                {
-                    var servicePoint = await _servicePointRepository.GetServicePointById(servicePointId.Value);
-                    if (servicePoint == null)
-                    {
-                        return BadRequest("Service point not found");
-                    }
-                }
 
-                // Update assignment
-                await _userRepository.UpdateUserServicePoint(userId, servicePointId);
-
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error assigning staff to service point");
-                return BadRequest($"Error: {ex.Message.Split(':')[0]}");
-            }
-        }
     }
 }
