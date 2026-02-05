@@ -51,7 +51,7 @@ namespace Queue_Management_System.Data
             await command.ExecuteNonQueryAsync();
         }
 
-        // For INSERT ... RETURNING id
+
         public async Task<T> ExecuteScalarAsync<T>(string sql, params NpgsqlParameter[] parameters)
         {
             using var connection = CreateConnection();
@@ -63,7 +63,8 @@ namespace Queue_Management_System.Data
                 command.Parameters.AddRange(parameters);
 
             var result = await command.ExecuteScalarAsync();
-            return (T)result!;
+            // return (T)result!;
+            return (T)Convert.ChangeType(result, typeof(T))!;
         }
 
         public async Task<List<T>> ExecuteQueryAsync<T>(string sql, Func<NpgsqlDataReader, T> mapper, params NpgsqlParameter[] parameters)
@@ -129,6 +130,21 @@ namespace Queue_Management_System.Data
                 command.Parameters.AddRange(parameters);
 
             return await command.ExecuteNonQueryAsync();
+        }
+
+        // For COUNT(*) queries - returns long (bigint)
+        public async Task<long> ExecuteCountAsync(string sql, params NpgsqlParameter[] parameters)
+        {
+            using var connection = CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new NpgsqlCommand(sql, connection);
+
+            if (parameters?.Length > 0)
+                command.Parameters.AddRange(parameters);
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt64(result);
         }
 
     }

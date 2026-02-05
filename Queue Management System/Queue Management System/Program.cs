@@ -17,6 +17,7 @@ builder.Services.AddScoped<Queue_Management_System.Data.Repositories.ServiceRepo
 builder.Services.AddScoped<Queue_Management_System.Data.Repositories.ServicePointRepository>();
 builder.Services.AddScoped<Queue_Management_System.Data.Repositories.TicketRepository>();
 builder.Services.AddScoped<Queue_Management_System.Data.Repositories.UserRepository>();
+builder.Services.AddScoped<Queue_Management_System.Data.Repositories.DashboardRepository>();
 builder.Services.AddScoped<Queue_Management_System.Data.DatabaseInitializer>();
 
 var app = builder.Build();
