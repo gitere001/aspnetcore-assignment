@@ -310,26 +310,39 @@ namespace Queue_Management_System.Controllers
                 // A4 Page Settings
                 page.PaperWidth = 210; // mm
                 page.PaperHeight = 297; // mm
-                page.LeftMargin = 20;
-                page.RightMargin = 20;
-                page.TopMargin = 20;
-                page.BottomMargin = 20;
+                page.LeftMargin = 15;
+                page.RightMargin = 15;
+                page.TopMargin = 15;
+                page.BottomMargin = 15;
 
                 report.Pages.Add(page);
 
+                // Available width: 210 - 30 = 180mm
+                float pageWidth = 180f;
+
                 // ========== HEADER SECTION ==========
                 var headerBand = new FastReport.ReportTitleBand();
-                headerBand.Height = 40;
+                headerBand.Height = 70;
                 page.Bands.Add(headerBand);
+
+                // Header background
+                var headerBox = new FastReport.ShapeObject
+                {
+                    Bounds = new System.Drawing.RectangleF(0, 0, pageWidth, 65),
+                    Shape = FastReport.ShapeKind.Rectangle,
+                    Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(41, 98, 255))
+                };
+                headerBand.Objects.Add(headerBox);
 
                 // Main Title
                 var mainTitle = new FastReport.TextObject
                 {
                     Text = "QUEUE MANAGEMENT SYSTEM",
-                    Bounds = new System.Drawing.RectangleF(0, 5, 170, 15),
-                    Font = new System.Drawing.Font("Arial", 14, System.Drawing.FontStyle.Bold),
+                    Bounds = new System.Drawing.RectangleF(0, 10, pageWidth, 12),
+                    Font = new System.Drawing.Font("Arial", 16, System.Drawing.FontStyle.Bold),
                     HorzAlign = FastReport.HorzAlign.Center,
-                    TextColor = System.Drawing.Color.Navy
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.White
                 };
                 headerBand.Objects.Add(mainTitle);
 
@@ -337,10 +350,11 @@ namespace Queue_Management_System.Controllers
                 var subtitle = new FastReport.TextObject
                 {
                     Text = "ANALYTICAL REPORT",
-                    Bounds = new System.Drawing.RectangleF(0, 22, 170, 12),
-                    Font = new System.Drawing.Font("Arial", 11, System.Drawing.FontStyle.Bold),
+                    Bounds = new System.Drawing.RectangleF(0, 26, pageWidth, 10),
+                    Font = new System.Drawing.Font("Arial", 12, System.Drawing.FontStyle.Bold),
                     HorzAlign = FastReport.HorzAlign.Center,
-                    TextColor = System.Drawing.Color.Navy
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.White
                 };
                 headerBand.Objects.Add(subtitle);
 
@@ -348,48 +362,170 @@ namespace Queue_Management_System.Controllers
                 var dateText = new FastReport.TextObject
                 {
                     Text = $"Period: {startDate:MMMM d, yyyy} - {endDate:MMMM d, yyyy}",
-                    Bounds = new System.Drawing.RectangleF(0, 35, 170, 10),
+                    Bounds = new System.Drawing.RectangleF(0, 40, pageWidth, 8),
                     Font = new System.Drawing.Font("Arial", 9),
-                    HorzAlign = FastReport.HorzAlign.Center
+                    HorzAlign = FastReport.HorzAlign.Center,
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.White
                 };
                 headerBand.Objects.Add(dateText);
 
+                // Generation timestamp
+                var timestampText = new FastReport.TextObject
+                {
+                    Text = $"Generated: {DateTime.Now:MMMM d, yyyy h:mm tt}",
+                    Bounds = new System.Drawing.RectangleF(0, 52, pageWidth, 7),
+                    Font = new System.Drawing.Font("Arial", 7),
+                    HorzAlign = FastReport.HorzAlign.Center,
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.FromArgb(230, 240, 255)
+                };
+                headerBand.Objects.Add(timestampText);
+
                 // ========== SUMMARY SECTION ==========
                 var summaryBand = new FastReport.DataBand();
-                summaryBand.Height = 60;
+                summaryBand.Height = 85;
                 page.Bands.Add(summaryBand);
 
                 // Summary Title
                 var summaryTitle = new FastReport.TextObject
                 {
                     Text = "OVERALL SUMMARY",
-                    Bounds = new System.Drawing.RectangleF(0, 5, 170, 12),
-                    Font = new System.Drawing.Font("Arial", 10, System.Drawing.FontStyle.Bold),
+                    Bounds = new System.Drawing.RectangleF(0, 8, pageWidth, 10),
+                    Font = new System.Drawing.Font("Arial", 11, System.Drawing.FontStyle.Bold),
                     HorzAlign = FastReport.HorzAlign.Left,
-                    TextColor = System.Drawing.Color.DarkSlateGray
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.FromArgb(41, 98, 255)
                 };
                 summaryBand.Objects.Add(summaryTitle);
 
-                // Simple line using ShapeObject (like in HomeController)
-                var line1 = new FastReport.ShapeObject
+                // Decorative line
+                var summaryLine = new FastReport.ShapeObject
                 {
-                    Bounds = new System.Drawing.RectangleF(0, 20, 170, 1),
+                    Bounds = new System.Drawing.RectangleF(0, 20, 60, 1.5f),
                     Shape = FastReport.ShapeKind.Rectangle,
-                    Fill = new FastReport.SolidFill(System.Drawing.Color.LightGray)
+                    Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(41, 98, 255))
                 };
-                summaryBand.Objects.Add(line1);
+                summaryBand.Objects.Add(summaryLine);
 
-                // Summary Content
-                var summaryContent = new FastReport.TextObject
+                // Summary boxes - 3 columns with 5mm gaps
+                float boxWidth = 56.67f; // (180 - 10) / 3
+                float boxHeight = 50f;
+                float boxY = 28f;
+                float gap = 5f;
+
+                // Box 1: Total Customers
+                var box1 = new FastReport.ShapeObject
                 {
-                    Text = $"Total Customers Served: {reportData.TotalCustomersServed}\n" +
-                           $"Average Wait Time: {reportData.OverallAverageWaitTimeMinutes:F1} minutes\n" +
-                           $"Average Service Time: {reportData.OverallAverageServiceTimeMinutes:F1} minutes",
-                    Bounds = new System.Drawing.RectangleF(5, 25, 160, 30),
-                    Font = new System.Drawing.Font("Arial", 9),
-                    HorzAlign = FastReport.HorzAlign.Left
+                    Bounds = new System.Drawing.RectangleF(0, boxY, boxWidth, boxHeight),
+                    Shape = FastReport.ShapeKind.RoundRectangle,
+                    Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(248, 249, 250)),
+                    Border = new FastReport.Border
+                    {
+                        Lines = FastReport.BorderLines.All,
+                        Color = System.Drawing.Color.FromArgb(222, 226, 230),
+                        Width = 1f
+                    }
                 };
-                summaryBand.Objects.Add(summaryContent);
+                summaryBand.Objects.Add(box1);
+
+                var box1Value = new FastReport.TextObject
+                {
+                    Text = reportData.TotalCustomersServed.ToString(),
+                    Bounds = new System.Drawing.RectangleF(0, boxY + 10, boxWidth, 16),
+                    Font = new System.Drawing.Font("Arial", 20, System.Drawing.FontStyle.Bold),
+                    HorzAlign = FastReport.HorzAlign.Center,
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.FromArgb(41, 98, 255)
+                };
+                summaryBand.Objects.Add(box1Value);
+
+                var box1Label = new FastReport.TextObject
+                {
+                    Text = "Total Customers",
+                    Bounds = new System.Drawing.RectangleF(0, boxY + 32, boxWidth, 8),
+                    Font = new System.Drawing.Font("Arial", 8),
+                    HorzAlign = FastReport.HorzAlign.Center,
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.FromArgb(108, 117, 125)
+                };
+                summaryBand.Objects.Add(box1Label);
+
+                // Box 2: Avg Wait Time
+                float box2X = boxWidth + gap;
+                var box2 = new FastReport.ShapeObject
+                {
+                    Bounds = new System.Drawing.RectangleF(box2X, boxY, boxWidth, boxHeight),
+                    Shape = FastReport.ShapeKind.RoundRectangle,
+                    Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(248, 249, 250)),
+                    Border = new FastReport.Border
+                    {
+                        Lines = FastReport.BorderLines.All,
+                        Color = System.Drawing.Color.FromArgb(222, 226, 230),
+                        Width = 1f
+                    }
+                };
+                summaryBand.Objects.Add(box2);
+
+                var box2Value = new FastReport.TextObject
+                {
+                    Text = $"{reportData.OverallAverageWaitTimeMinutes:F1}",
+                    Bounds = new System.Drawing.RectangleF(box2X, boxY + 10, boxWidth, 16),
+                    Font = new System.Drawing.Font("Arial", 20, System.Drawing.FontStyle.Bold),
+                    HorzAlign = FastReport.HorzAlign.Center,
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.FromArgb(23, 162, 184)
+                };
+                summaryBand.Objects.Add(box2Value);
+
+                var box2Label = new FastReport.TextObject
+                {
+                    Text = "Avg Wait Time (min)",
+                    Bounds = new System.Drawing.RectangleF(box2X, boxY + 32, boxWidth, 8),
+                    Font = new System.Drawing.Font("Arial", 8),
+                    HorzAlign = FastReport.HorzAlign.Center,
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.FromArgb(108, 117, 125)
+                };
+                summaryBand.Objects.Add(box2Label);
+
+                // Box 3: Avg Service Time
+                float box3X = (boxWidth + gap) * 2;
+                var box3 = new FastReport.ShapeObject
+                {
+                    Bounds = new System.Drawing.RectangleF(box3X, boxY, boxWidth, boxHeight),
+                    Shape = FastReport.ShapeKind.RoundRectangle,
+                    Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(248, 249, 250)),
+                    Border = new FastReport.Border
+                    {
+                        Lines = FastReport.BorderLines.All,
+                        Color = System.Drawing.Color.FromArgb(222, 226, 230),
+                        Width = 1f
+                    }
+                };
+                summaryBand.Objects.Add(box3);
+
+                var box3Value = new FastReport.TextObject
+                {
+                    Text = $"{reportData.OverallAverageServiceTimeMinutes:F1}",
+                    Bounds = new System.Drawing.RectangleF(box3X, boxY + 10, boxWidth, 16),
+                    Font = new System.Drawing.Font("Arial", 20, System.Drawing.FontStyle.Bold),
+                    HorzAlign = FastReport.HorzAlign.Center,
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.FromArgb(40, 167, 69)
+                };
+                summaryBand.Objects.Add(box3Value);
+
+                var box3Label = new FastReport.TextObject
+                {
+                    Text = "Avg Service Time (min)",
+                    Bounds = new System.Drawing.RectangleF(box3X, boxY + 32, boxWidth, 8),
+                    Font = new System.Drawing.Font("Arial", 8),
+                    HorzAlign = FastReport.HorzAlign.Center,
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.FromArgb(108, 117, 125)
+                };
+                summaryBand.Objects.Add(box3Label);
 
                 // ========== SERVICE POINT PERFORMANCE ==========
                 if (reportData.ServicePointPerformance?.Any() == true)
@@ -402,79 +538,240 @@ namespace Queue_Management_System.Controllers
                     var spHeader = new FastReport.TextObject
                     {
                         Text = "SERVICE POINT PERFORMANCE",
-                        Bounds = new System.Drawing.RectangleF(0, 5, 170, 12),
-                        Font = new System.Drawing.Font("Arial", 10, System.Drawing.FontStyle.Bold),
+                        Bounds = new System.Drawing.RectangleF(0, 5, pageWidth, 10),
+                        Font = new System.Drawing.Font("Arial", 11, System.Drawing.FontStyle.Bold),
                         HorzAlign = FastReport.HorzAlign.Left,
-                        TextColor = System.Drawing.Color.DarkSlateGray
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.FromArgb(41, 98, 255)
                     };
                     spHeaderBand.Objects.Add(spHeader);
 
-                    // Create table for service points
-                    float spTableHeight = reportData.ServicePointPerformance.Count * 25 + 30;
+                    var spLine = new FastReport.ShapeObject
+                    {
+                        Bounds = new System.Drawing.RectangleF(0, 17, 80, 1.5f),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(41, 98, 255))
+                    };
+                    spHeaderBand.Objects.Add(spLine);
+
+                    // Service Point Table
+                    float rowHeight = 18f;
+                    int rowCount = reportData.ServicePointPerformance.Count;
+                    float tableHeight = (rowCount + 1) * rowHeight + 15;
+
                     var spTableBand = new FastReport.DataBand();
-                    spTableBand.Height = spTableHeight;
+                    spTableBand.Height = tableHeight;
                     page.Bands.Add(spTableBand);
 
-                    // Table Header Row
-                    var headerRowBox = new FastReport.ShapeObject
+                    // Column widths - exact measurements
+                    float col1 = 85f;  // Service Point
+                    float col2 = 30f;  // Served
+                    float col3 = 32f;  // Wait
+                    float col4 = 33f;  // Service
+                    float totalWidth = col1 + col2 + col3 + col4;
+
+                    // Table border
+                    var tableBorder = new FastReport.ShapeObject
                     {
-                        Bounds = new System.Drawing.RectangleF(0, 5, 170, 25),
+                        Bounds = new System.Drawing.RectangleF(0, 5, totalWidth, (rowCount + 1) * rowHeight),
                         Shape = FastReport.ShapeKind.Rectangle,
-                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(240, 240, 240))
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.White),
+                        Border = new FastReport.Border
+                        {
+                            Lines = FastReport.BorderLines.All,
+                            Color = System.Drawing.Color.FromArgb(200, 200, 200),
+                            Width = 1f
+                        }
                     };
-                    spTableBand.Objects.Add(headerRowBox);
+                    spTableBand.Objects.Add(tableBorder);
 
-                    // Column Headers
-                    var spColumnHeaders = new FastReport.TextObject
+                    float currentY = 5f;
+
+                    // Header row background
+                    var headerBg = new FastReport.ShapeObject
                     {
-                        Text = "Service Point               Served   Wait(min)   Service(min)",
-                        Bounds = new System.Drawing.RectangleF(5, 10, 160, 10),
-                        Font = new System.Drawing.Font("Arial", 8, System.Drawing.FontStyle.Bold),
-                        HorzAlign = FastReport.HorzAlign.Left
+                        Bounds = new System.Drawing.RectangleF(0, currentY, totalWidth, rowHeight),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(41, 98, 255))
                     };
-                    spTableBand.Objects.Add(spColumnHeaders);
+                    spTableBand.Objects.Add(headerBg);
 
-                    // Data Rows
-                    float rowY = 35;
+                    // Header text - Service Point
+                    var h1 = new FastReport.TextObject
+                    {
+                        Text = "Service Point",
+                        Bounds = new System.Drawing.RectangleF(2, currentY + 3, col1 - 4, rowHeight - 6),
+                        Font = new System.Drawing.Font("Arial", 9, System.Drawing.FontStyle.Bold),
+                        HorzAlign = FastReport.HorzAlign.Left,
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.White
+                    };
+                    spTableBand.Objects.Add(h1);
+
+                    // Header text - Served
+                    var h2 = new FastReport.TextObject
+                    {
+                        Text = "Served",
+                        Bounds = new System.Drawing.RectangleF(col1 + 2, currentY + 3, col2 - 4, rowHeight - 6),
+                        Font = new System.Drawing.Font("Arial", 9, System.Drawing.FontStyle.Bold),
+                        HorzAlign = FastReport.HorzAlign.Center,
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.White
+                    };
+                    spTableBand.Objects.Add(h2);
+
+                    // Header text - Wait
+                    var h3 = new FastReport.TextObject
+                    {
+                        Text = "Wait (min)",
+                        Bounds = new System.Drawing.RectangleF(col1 + col2 + 2, currentY + 3, col3 - 4, rowHeight - 6),
+                        Font = new System.Drawing.Font("Arial", 9, System.Drawing.FontStyle.Bold),
+                        HorzAlign = FastReport.HorzAlign.Center,
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.White
+                    };
+                    spTableBand.Objects.Add(h3);
+
+                    // Header text - Service
+                    var h4 = new FastReport.TextObject
+                    {
+                        Text = "Service (min)",
+                        Bounds = new System.Drawing.RectangleF(col1 + col2 + col3 + 2, currentY + 3, col4 - 4, rowHeight - 6),
+                        Font = new System.Drawing.Font("Arial", 9, System.Drawing.FontStyle.Bold),
+                        HorzAlign = FastReport.HorzAlign.Center,
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.White
+                    };
+                    spTableBand.Objects.Add(h4);
+
+                    // Vertical lines in header
+                    var vLine1 = new FastReport.ShapeObject
+                    {
+                        Bounds = new System.Drawing.RectangleF(col1, currentY, 0.5f, rowHeight),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(200, 210, 255))
+                    };
+                    spTableBand.Objects.Add(vLine1);
+
+                    var vLine2 = new FastReport.ShapeObject
+                    {
+                        Bounds = new System.Drawing.RectangleF(col1 + col2, currentY, 0.5f, rowHeight),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(200, 210, 255))
+                    };
+                    spTableBand.Objects.Add(vLine2);
+
+                    var vLine3 = new FastReport.ShapeObject
+                    {
+                        Bounds = new System.Drawing.RectangleF(col1 + col2 + col3, currentY, 0.5f, rowHeight),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(200, 210, 255))
+                    };
+                    spTableBand.Objects.Add(vLine3);
+
+                    currentY += rowHeight;
+
+                    // Data rows
                     bool alternate = false;
-
                     foreach (var sp in reportData.ServicePointPerformance)
                     {
-                        // Alternate row colors
                         var rowColor = alternate ?
-                            System.Drawing.Color.White :
-                            System.Drawing.Color.FromArgb(250, 250, 250);
+                            System.Drawing.Color.FromArgb(248, 249, 250) :
+                            System.Drawing.Color.White;
                         alternate = !alternate;
 
-                        // Row box
-                        var rowBox = new FastReport.ShapeObject
+                        // Row background
+                        var rowBg = new FastReport.ShapeObject
                         {
-                            Bounds = new System.Drawing.RectangleF(0, rowY, 170, 25),
+                            Bounds = new System.Drawing.RectangleF(0, currentY, totalWidth, rowHeight),
                             Shape = FastReport.ShapeKind.Rectangle,
                             Fill = new FastReport.SolidFill(rowColor)
                         };
-                        spTableBand.Objects.Add(rowBox);
+                        spTableBand.Objects.Add(rowBg);
 
-                        // Row content
-                        var rowText = new FastReport.TextObject
+                        // Service Point name
+                        var nameText = new FastReport.TextObject
                         {
-                            Text = $"{sp.ServicePointName,-25} {sp.CustomersServed,7}    {sp.AverageWaitTimeMinutes,8:F1}      {sp.AverageServiceTimeMinutes,8:F1}",
-                            Bounds = new System.Drawing.RectangleF(5, rowY + 8, 160, 10),
+                            Text = sp.ServicePointName,
+                            Bounds = new System.Drawing.RectangleF(2, currentY + 3, col1 - 4, rowHeight - 6),
                             Font = new System.Drawing.Font("Arial", 8),
-                            HorzAlign = FastReport.HorzAlign.Left
+                            HorzAlign = FastReport.HorzAlign.Left,
+                            VertAlign = FastReport.VertAlign.Center,
+                            TextColor = System.Drawing.Color.FromArgb(33, 37, 41)
                         };
-                        spTableBand.Objects.Add(rowText);
+                        spTableBand.Objects.Add(nameText);
 
-                        // Bottom border line for row
-                        var rowLine = new FastReport.ShapeObject
+                        // Served count
+                        var servedText = new FastReport.TextObject
                         {
-                            Bounds = new System.Drawing.RectangleF(0, rowY + 24, 170, 1),
-                            Shape = FastReport.ShapeKind.Rectangle,
-                            Fill = new FastReport.SolidFill(System.Drawing.Color.LightGray)
+                            Text = sp.CustomersServed.ToString(),
+                            Bounds = new System.Drawing.RectangleF(col1 + 2, currentY + 3, col2 - 4, rowHeight - 6),
+                            Font = new System.Drawing.Font("Arial", 8, sp.CustomersServed > 0 ? System.Drawing.FontStyle.Bold : System.Drawing.FontStyle.Regular),
+                            HorzAlign = FastReport.HorzAlign.Center,
+                            VertAlign = FastReport.VertAlign.Center,
+                            TextColor = sp.CustomersServed > 0 ? System.Drawing.Color.FromArgb(41, 98, 255) : System.Drawing.Color.FromArgb(108, 117, 125)
                         };
-                        spTableBand.Objects.Add(rowLine);
+                        spTableBand.Objects.Add(servedText);
 
-                        rowY += 25;
+                        // Wait time
+                        var waitText = new FastReport.TextObject
+                        {
+                            Text = sp.AverageWaitTimeMinutes.ToString("F1"),
+                            Bounds = new System.Drawing.RectangleF(col1 + col2 + 2, currentY + 3, col3 - 4, rowHeight - 6),
+                            Font = new System.Drawing.Font("Arial", 8),
+                            HorzAlign = FastReport.HorzAlign.Center,
+                            VertAlign = FastReport.VertAlign.Center,
+                            TextColor = System.Drawing.Color.FromArgb(33, 37, 41)
+                        };
+                        spTableBand.Objects.Add(waitText);
+
+                        // Service time
+                        var serviceText = new FastReport.TextObject
+                        {
+                            Text = sp.AverageServiceTimeMinutes.ToString("F1"),
+                            Bounds = new System.Drawing.RectangleF(col1 + col2 + col3 + 2, currentY + 3, col4 - 4, rowHeight - 6),
+                            Font = new System.Drawing.Font("Arial", 8),
+                            HorzAlign = FastReport.HorzAlign.Center,
+                            VertAlign = FastReport.VertAlign.Center,
+                            TextColor = System.Drawing.Color.FromArgb(33, 37, 41)
+                        };
+                        spTableBand.Objects.Add(serviceText);
+
+                        // Vertical lines
+                        var vl1 = new FastReport.ShapeObject
+                        {
+                            Bounds = new System.Drawing.RectangleF(col1, currentY, 0.5f, rowHeight),
+                            Shape = FastReport.ShapeKind.Rectangle,
+                            Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(222, 226, 230))
+                        };
+                        spTableBand.Objects.Add(vl1);
+
+                        var vl2 = new FastReport.ShapeObject
+                        {
+                            Bounds = new System.Drawing.RectangleF(col1 + col2, currentY, 0.5f, rowHeight),
+                            Shape = FastReport.ShapeKind.Rectangle,
+                            Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(222, 226, 230))
+                        };
+                        spTableBand.Objects.Add(vl2);
+
+                        var vl3 = new FastReport.ShapeObject
+                        {
+                            Bounds = new System.Drawing.RectangleF(col1 + col2 + col3, currentY, 0.5f, rowHeight),
+                            Shape = FastReport.ShapeKind.Rectangle,
+                            Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(222, 226, 230))
+                        };
+                        spTableBand.Objects.Add(vl3);
+
+                        // Horizontal line
+                        var hLine = new FastReport.ShapeObject
+                        {
+                            Bounds = new System.Drawing.RectangleF(0, currentY + rowHeight, totalWidth, 0.5f),
+                            Shape = FastReport.ShapeKind.Rectangle,
+                            Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(222, 226, 230))
+                        };
+                        spTableBand.Objects.Add(hLine);
+
+                        currentY += rowHeight;
                     }
                 }
 
@@ -489,96 +786,321 @@ namespace Queue_Management_System.Controllers
                     var staffHeader = new FastReport.TextObject
                     {
                         Text = "STAFF PERFORMANCE",
-                        Bounds = new System.Drawing.RectangleF(0, 5, 170, 12),
-                        Font = new System.Drawing.Font("Arial", 10, System.Drawing.FontStyle.Bold),
+                        Bounds = new System.Drawing.RectangleF(0, 5, pageWidth, 10),
+                        Font = new System.Drawing.Font("Arial", 11, System.Drawing.FontStyle.Bold),
                         HorzAlign = FastReport.HorzAlign.Left,
-                        TextColor = System.Drawing.Color.DarkSlateGray
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.FromArgb(41, 98, 255)
                     };
                     staffHeaderBand.Objects.Add(staffHeader);
 
-                    // Create table for staff
-                    float staffTableHeight = reportData.StaffPerformance.Count * 25 + 30;
+                    var staffLine = new FastReport.ShapeObject
+                    {
+                        Bounds = new System.Drawing.RectangleF(0, 17, 60, 1.5f),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(41, 98, 255))
+                    };
+                    staffHeaderBand.Objects.Add(staffLine);
+
+                    // Staff Table
+                    float rowHeight = 18f;
+                    int rowCount = reportData.StaffPerformance.Count;
+                    float tableHeight = (rowCount + 1) * rowHeight + 15;
+
                     var staffTableBand = new FastReport.DataBand();
-                    staffTableBand.Height = staffTableHeight;
+                    staffTableBand.Height = tableHeight;
                     page.Bands.Add(staffTableBand);
 
-                    // Table Header Row
-                    var staffHeaderRowBox = new FastReport.ShapeObject
+                    // Column widths for staff table (5 columns)
+                    float sCol1 = 50f;  // Staff Name
+                    float sCol2 = 50f;  // Service Point
+                    float sCol3 = 25f;  // Served
+                    float sCol4 = 27f;  // Wait
+                    float sCol5 = 28f;  // Service
+                    float sTotalWidth = sCol1 + sCol2 + sCol3 + sCol4 + sCol5;
+
+                    // Table border
+                    var tableBorder = new FastReport.ShapeObject
                     {
-                        Bounds = new System.Drawing.RectangleF(0, 5, 170, 25),
+                        Bounds = new System.Drawing.RectangleF(0, 5, sTotalWidth, (rowCount + 1) * rowHeight),
                         Shape = FastReport.ShapeKind.Rectangle,
-                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(240, 240, 240))
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.White),
+                        Border = new FastReport.Border
+                        {
+                            Lines = FastReport.BorderLines.All,
+                            Color = System.Drawing.Color.FromArgb(200, 200, 200),
+                            Width = 1f
+                        }
                     };
-                    staffTableBand.Objects.Add(staffHeaderRowBox);
+                    staffTableBand.Objects.Add(tableBorder);
 
-                    // Column Headers
-                    var staffColumnHeaders = new FastReport.TextObject
+                    float currentY = 5f;
+
+                    // Header row background
+                    var headerBg = new FastReport.ShapeObject
                     {
-                        Text = "Staff Member               Served   Wait(min)   Service(min)",
-                        Bounds = new System.Drawing.RectangleF(5, 10, 160, 10),
-                        Font = new System.Drawing.Font("Arial", 8, System.Drawing.FontStyle.Bold),
-                        HorzAlign = FastReport.HorzAlign.Left
+                        Bounds = new System.Drawing.RectangleF(0, currentY, sTotalWidth, rowHeight),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(41, 98, 255))
                     };
-                    staffTableBand.Objects.Add(staffColumnHeaders);
+                    staffTableBand.Objects.Add(headerBg);
 
-                    // Data Rows
-                    float rowY = 35;
+                    // Header text - Staff Member
+                    var sh1 = new FastReport.TextObject
+                    {
+                        Text = "Staff Member",
+                        Bounds = new System.Drawing.RectangleF(2, currentY + 3, sCol1 - 4, rowHeight - 6),
+                        Font = new System.Drawing.Font("Arial", 9, System.Drawing.FontStyle.Bold),
+                        HorzAlign = FastReport.HorzAlign.Left,
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.White
+                    };
+                    staffTableBand.Objects.Add(sh1);
+
+                    // Header text - Service Point
+                    var sh2 = new FastReport.TextObject
+                    {
+                        Text = "Service Point",
+                        Bounds = new System.Drawing.RectangleF(sCol1 + 2, currentY + 3, sCol2 - 4, rowHeight - 6),
+                        Font = new System.Drawing.Font("Arial", 9, System.Drawing.FontStyle.Bold),
+                        HorzAlign = FastReport.HorzAlign.Left,
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.White
+                    };
+                    staffTableBand.Objects.Add(sh2);
+
+                    // Header text - Served
+                    var sh3 = new FastReport.TextObject
+                    {
+                        Text = "Served",
+                        Bounds = new System.Drawing.RectangleF(sCol1 + sCol2 + 2, currentY + 3, sCol3 - 4, rowHeight - 6),
+                        Font = new System.Drawing.Font("Arial", 8, System.Drawing.FontStyle.Bold),
+                        HorzAlign = FastReport.HorzAlign.Center,
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.White
+                    };
+                    staffTableBand.Objects.Add(sh3);
+
+                    // Header text - Wait
+                    var sh4 = new FastReport.TextObject
+                    {
+                        Text = "Wait (min)",
+                        Bounds = new System.Drawing.RectangleF(sCol1 + sCol2 + sCol3 + 2, currentY + 3, sCol4 - 4, rowHeight - 6),
+                        Font = new System.Drawing.Font("Arial", 8, System.Drawing.FontStyle.Bold),
+                        HorzAlign = FastReport.HorzAlign.Center,
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.White
+                    };
+                    staffTableBand.Objects.Add(sh4);
+
+                    // Header text - Service
+                    var sh5 = new FastReport.TextObject
+                    {
+                        Text = "Service (min)",
+                        Bounds = new System.Drawing.RectangleF(sCol1 + sCol2 + sCol3 + sCol4 + 2, currentY + 3, sCol5 - 4, rowHeight - 6),
+                        Font = new System.Drawing.Font("Arial", 8, System.Drawing.FontStyle.Bold),
+                        HorzAlign = FastReport.HorzAlign.Center,
+                        VertAlign = FastReport.VertAlign.Center,
+                        TextColor = System.Drawing.Color.White
+                    };
+                    staffTableBand.Objects.Add(sh5);
+
+                    // Vertical lines in header
+                    var svLine1 = new FastReport.ShapeObject
+                    {
+                        Bounds = new System.Drawing.RectangleF(sCol1, currentY, 0.5f, rowHeight),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(200, 210, 255))
+                    };
+                    staffTableBand.Objects.Add(svLine1);
+
+                    var svLine2 = new FastReport.ShapeObject
+                    {
+                        Bounds = new System.Drawing.RectangleF(sCol1 + sCol2, currentY, 0.5f, rowHeight),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(200, 210, 255))
+                    };
+                    staffTableBand.Objects.Add(svLine2);
+
+                    var svLine3 = new FastReport.ShapeObject
+                    {
+                        Bounds = new System.Drawing.RectangleF(sCol1 + sCol2 + sCol3, currentY, 0.5f, rowHeight),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(200, 210, 255))
+                    };
+                    staffTableBand.Objects.Add(svLine3);
+
+                    var svLine4 = new FastReport.ShapeObject
+                    {
+                        Bounds = new System.Drawing.RectangleF(sCol1 + sCol2 + sCol3 + sCol4, currentY, 0.5f, rowHeight),
+                        Shape = FastReport.ShapeKind.Rectangle,
+                        Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(200, 210, 255))
+                    };
+                    staffTableBand.Objects.Add(svLine4);
+
+                    currentY += rowHeight;
+
+                    // Data rows
                     bool alternate = false;
-
                     foreach (var staff in reportData.StaffPerformance)
                     {
-                        // Alternate row colors
                         var rowColor = alternate ?
-                            System.Drawing.Color.White :
-                            System.Drawing.Color.FromArgb(250, 250, 250);
+                            System.Drawing.Color.FromArgb(248, 249, 250) :
+                            System.Drawing.Color.White;
                         alternate = !alternate;
 
-                        // Row box
-                        var rowBox = new FastReport.ShapeObject
+                        // Row background
+                        var rowBg = new FastReport.ShapeObject
                         {
-                            Bounds = new System.Drawing.RectangleF(0, rowY, 170, 25),
+                            Bounds = new System.Drawing.RectangleF(0, currentY, sTotalWidth, rowHeight),
                             Shape = FastReport.ShapeKind.Rectangle,
                             Fill = new FastReport.SolidFill(rowColor)
                         };
-                        staffTableBand.Objects.Add(rowBox);
+                        staffTableBand.Objects.Add(rowBg);
 
-                        // Row content
-                        var rowText = new FastReport.TextObject
+                        // Staff name
+                        var nameText = new FastReport.TextObject
                         {
-                            Text = $"{staff.StaffName,-25} {staff.CustomersServed,7}    {staff.AverageWaitTimeMinutes,8:F1}      {staff.AverageServiceTimeMinutes,8:F1}",
-                            Bounds = new System.Drawing.RectangleF(5, rowY + 8, 160, 10),
+                            Text = staff.StaffName,
+                            Bounds = new System.Drawing.RectangleF(2, currentY + 3, sCol1 - 4, rowHeight - 6),
                             Font = new System.Drawing.Font("Arial", 8),
-                            HorzAlign = FastReport.HorzAlign.Left
+                            HorzAlign = FastReport.HorzAlign.Left,
+                            VertAlign = FastReport.VertAlign.Center,
+                            TextColor = System.Drawing.Color.FromArgb(33, 37, 41)
                         };
-                        staffTableBand.Objects.Add(rowText);
+                        staffTableBand.Objects.Add(nameText);
 
-                        // Bottom border line for row
-                        var rowLine = new FastReport.ShapeObject
+                        // Service Point
+                        var spText = new FastReport.TextObject
                         {
-                            Bounds = new System.Drawing.RectangleF(0, rowY + 24, 170, 1),
-                            Shape = FastReport.ShapeKind.Rectangle,
-                            Fill = new FastReport.SolidFill(System.Drawing.Color.LightGray)
+                            Text = staff.ServicePointName,
+                            Bounds = new System.Drawing.RectangleF(sCol1 + 2, currentY + 3, sCol2 - 4, rowHeight - 6),
+                            Font = new System.Drawing.Font("Arial", 8),
+                            HorzAlign = FastReport.HorzAlign.Left,
+                            VertAlign = FastReport.VertAlign.Center,
+                            TextColor = System.Drawing.Color.FromArgb(108, 117, 125)
                         };
-                        staffTableBand.Objects.Add(rowLine);
+                        staffTableBand.Objects.Add(spText);
 
-                        rowY += 25;
+                        // Served count
+                        var servedText = new FastReport.TextObject
+                        {
+                            Text = staff.CustomersServed.ToString(),
+                            Bounds = new System.Drawing.RectangleF(sCol1 + sCol2 + 2, currentY + 3, sCol3 - 4, rowHeight - 6),
+                            Font = new System.Drawing.Font("Arial", 8, staff.CustomersServed > 0 ? System.Drawing.FontStyle.Bold : System.Drawing.FontStyle.Regular),
+                            HorzAlign = FastReport.HorzAlign.Center,
+                            VertAlign = FastReport.VertAlign.Center,
+                            TextColor = staff.CustomersServed > 0 ? System.Drawing.Color.FromArgb(41, 98, 255) : System.Drawing.Color.FromArgb(108, 117, 125)
+                        };
+                        staffTableBand.Objects.Add(servedText);
+
+                        // Wait time
+                        var waitText = new FastReport.TextObject
+                        {
+                            Text = staff.AverageWaitTimeMinutes.ToString("F1"),
+                            Bounds = new System.Drawing.RectangleF(sCol1 + sCol2 + sCol3 + 2, currentY + 3, sCol4 - 4, rowHeight - 6),
+                            Font = new System.Drawing.Font("Arial", 8),
+                            HorzAlign = FastReport.HorzAlign.Center,
+                            VertAlign = FastReport.VertAlign.Center,
+                            TextColor = System.Drawing.Color.FromArgb(33, 37, 41)
+                        };
+                        staffTableBand.Objects.Add(waitText);
+
+                        // Service time
+                        var serviceText = new FastReport.TextObject
+                        {
+                            Text = staff.AverageServiceTimeMinutes.ToString("F1"),
+                            Bounds = new System.Drawing.RectangleF(sCol1 + sCol2 + sCol3 + sCol4 + 2, currentY + 3, sCol5 - 4, rowHeight - 6),
+                            Font = new System.Drawing.Font("Arial", 8),
+                            HorzAlign = FastReport.HorzAlign.Center,
+                            VertAlign = FastReport.VertAlign.Center,
+                            TextColor = System.Drawing.Color.FromArgb(33, 37, 41)
+                        };
+                        staffTableBand.Objects.Add(serviceText);
+
+                        // Vertical lines
+                        var svl1 = new FastReport.ShapeObject
+                        {
+                            Bounds = new System.Drawing.RectangleF(sCol1, currentY, 0.5f, rowHeight),
+                            Shape = FastReport.ShapeKind.Rectangle,
+                            Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(222, 226, 230))
+                        };
+                        staffTableBand.Objects.Add(svl1);
+
+                        var svl2 = new FastReport.ShapeObject
+                        {
+                            Bounds = new System.Drawing.RectangleF(sCol1 + sCol2, currentY, 0.5f, rowHeight),
+                            Shape = FastReport.ShapeKind.Rectangle,
+                            Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(222, 226, 230))
+                        };
+                        staffTableBand.Objects.Add(svl2);
+
+                        var svl3 = new FastReport.ShapeObject
+                        {
+                            Bounds = new System.Drawing.RectangleF(sCol1 + sCol2 + sCol3, currentY, 0.5f, rowHeight),
+                            Shape = FastReport.ShapeKind.Rectangle,
+                            Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(222, 226, 230))
+                        };
+                        staffTableBand.Objects.Add(svl3);
+
+                        var svl4 = new FastReport.ShapeObject
+                        {
+                            Bounds = new System.Drawing.RectangleF(sCol1 + sCol2 + sCol3 + sCol4, currentY, 0.5f, rowHeight),
+                            Shape = FastReport.ShapeKind.Rectangle,
+                            Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(222, 226, 230))
+                        };
+                        staffTableBand.Objects.Add(svl4);
+
+                        // Horizontal line
+                        var hLine = new FastReport.ShapeObject
+                        {
+                            Bounds = new System.Drawing.RectangleF(0, currentY + rowHeight, sTotalWidth, 0.5f),
+                            Shape = FastReport.ShapeKind.Rectangle,
+                            Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(222, 226, 230))
+                        };
+                        staffTableBand.Objects.Add(hLine);
+
+                        currentY += rowHeight;
                     }
                 }
 
-                // Footer
+                // ========== FOOTER ==========
                 var footerBand = new FastReport.PageFooterBand();
-                footerBand.Height = 20;
+                footerBand.Height = 25;
                 page.Bands.Add(footerBand);
 
-                var footerText = new FastReport.TextObject
+                // Footer separator line
+                var footerLine = new FastReport.ShapeObject
                 {
-                    Text = $"Generated on {DateTime.Now:MMMM d, yyyy h:mm tt} | Page [Page#]",
-                    Bounds = new System.Drawing.RectangleF(0, 5, 170, 10),
-                    Font = new System.Drawing.Font("Arial", 7),
-                    HorzAlign = FastReport.HorzAlign.Center,
-                    TextColor = System.Drawing.Color.Gray
+                    Bounds = new System.Drawing.RectangleF(0, 0, pageWidth, 0.5f),
+                    Shape = FastReport.ShapeKind.Rectangle,
+                    Fill = new FastReport.SolidFill(System.Drawing.Color.FromArgb(222, 226, 230))
                 };
-                footerBand.Objects.Add(footerText);
+                footerBand.Objects.Add(footerLine);
+
+                // Footer text - left
+                var footerLeft = new FastReport.TextObject
+                {
+                    Text = "Queue Management System",
+                    Bounds = new System.Drawing.RectangleF(0, 8, pageWidth / 2, 8),
+                    Font = new System.Drawing.Font("Arial", 7),
+                    HorzAlign = FastReport.HorzAlign.Left,
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.FromArgb(108, 117, 125)
+                };
+                footerBand.Objects.Add(footerLeft);
+
+                // Footer text - right (page number)
+                var footerRight = new FastReport.TextObject
+                {
+                    Text = "Page [Page#] of [TotalPages#]",
+                    Bounds = new System.Drawing.RectangleF(pageWidth / 2, 8, pageWidth / 2, 8),
+                    Font = new System.Drawing.Font("Arial", 7),
+                    HorzAlign = FastReport.HorzAlign.Right,
+                    VertAlign = FastReport.VertAlign.Center,
+                    TextColor = System.Drawing.Color.FromArgb(108, 117, 125)
+                };
+                footerBand.Objects.Add(footerRight);
 
                 // Prepare and export PDF
                 report.Prepare();
@@ -586,6 +1108,15 @@ namespace Queue_Management_System.Controllers
                 using (var ms = new System.IO.MemoryStream())
                 {
                     var pdfExport = new FastReport.Export.Pdf.PDFExport();
+
+                    // Basic PDF settings (compatible with free version)
+                    pdfExport.ShowProgress = false;
+                    pdfExport.Subject = "Queue Management Analytical Report";
+                    pdfExport.Title = $"Queue Analytics {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}";
+                    pdfExport.Author = "Queue Management System";
+                    pdfExport.Keywords = "Queue, Analytics, Report, Performance";
+                    pdfExport.Creator = "Queue Management System";
+
                     report.Export(pdfExport, ms);
                     ms.Position = 0;
 
