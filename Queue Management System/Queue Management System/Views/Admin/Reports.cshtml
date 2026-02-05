@@ -208,11 +208,11 @@
                 error: function (xhr) {
                     $('#loadingSpinner').hide();
                     $('#reportContent').html(`
-                                            <div class="alert alert-danger">
-                                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                                Error loading report data: ${xhr.responseJSON?.error || 'Unknown error'}
-                                            </div>
-                                        `);
+                                                        <div class="alert alert-danger">
+                                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                                            Error loading report data: ${xhr.responseJSON?.error || 'Unknown error'}
+                                                        </div>
+                                                    `);
                 }
             });
         }
@@ -224,90 +224,90 @@
 
             if (!data.success || data.totalCustomersServed === 0) {
                 $('#reportContent').html(`
-                                        <div class="text-center py-4">
-                                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                                            <h5 class="text-muted">No Data Available</h5>
-                                            <p class="text-muted">No customers were served in the selected period</p>
-                                        </div>
-                                    `);
+                                                    <div class="text-center py-4">
+                                                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                                                        <h5 class="text-muted">No Data Available</h5>
+                                                        <p class="text-muted">No customers were served in the selected period</p>
+                                                    </div>
+                                                `);
                 return;
             }
 
             let html = `
-                                    <!-- Report Header -->
-                                    <div class="mb-4 text-center">
-                                        <h4 class="text-primary mb-2">Queue Management System</h4>
-                                        <h5 class="text-dark mb-3">Analytical Report</h5>
-                                        <p class="text-muted">
-                                            ${formatDisplayDate(currentStartDate)} - ${formatDisplayDate(currentEndDate)}
-                                        </p>
-                                    </div>
+                                                <!-- Report Header -->
+                                                <div class="mb-4 text-center">
+                                                    <h4 class="text-primary mb-2">Queue Management System</h4>
+                                                    <h5 class="text-dark mb-3">Analytical Report</h5>
+                                                    <p class="text-muted">
+                                                        ${formatDisplayDate(currentStartDate)} - ${formatDisplayDate(currentEndDate)}
+                                                    </p>
+                                                </div>
 
-                                    <!-- Summary -->
-                                    <div class="card border-primary mb-4">
-                                        <div class="card-header bg-light">
-                                            <h6 class="mb-0"><i class="fas fa-list-alt me-2"></i>Overall Summary</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row text-center">
-                                                <div class="col-md-4 mb-3 mb-md-0">
-                                                    <div class="display-6 text-primary">${data.totalCustomersServed}</div>
-                                                    <div class="text-muted">Customers Served</div>
+                                                <!-- Summary -->
+                                                <div class="card border-primary mb-4">
+                                                    <div class="card-header bg-light">
+                                                        <h6 class="mb-0"><i class="fas fa-list-alt me-2"></i>Overall Summary</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="row text-center">
+                                                            <div class="col-md-4 mb-3 mb-md-0">
+                                                                <div class="display-6 text-primary">${data.totalCustomersServed}</div>
+                                                                <div class="text-muted">Customers Served</div>
+                                                            </div>
+                                                            <div class="col-md-4 mb-3 mb-md-0">
+                                                                <div class="display-6 text-info">${data.overallAverageWaitTimeMinutes.toFixed(1)}</div>
+                                                                <div class="text-muted">Avg Wait (minutes)</div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="display-6 text-success">${data.overallAverageServiceTimeMinutes.toFixed(1)}</div>
+                                                                <div class="text-muted">Avg Service (minutes)</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div class="col-md-4 mb-3 mb-md-0">
-                                                    <div class="display-6 text-info">${data.overallAverageWaitTimeMinutes.toFixed(1)}</div>
-                                                    <div class="text-muted">Avg Wait (minutes)</div>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <div class="display-6 text-success">${data.overallAverageServiceTimeMinutes.toFixed(1)}</div>
-                                                    <div class="text-muted">Avg Service (minutes)</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
+                                            `;
 
             // Service Point Performance
             if (data.servicePointPerformance && data.servicePointPerformance.length > 0) {
                 const activeServicePoints = data.servicePointPerformance;
                 if (activeServicePoints.length > 0) {
                     html += `
-                                            <div class="card border-secondary mb-4">
-                                                <div class="card-header bg-light">
-                                                    <h6 class="mb-0"><i class="fas fa-clinic-medical me-2"></i>Service Point Performance</h6>
-                                                </div>
-                                                <div class="card-body p-0">
-                                                    <div class="table-responsive">
-                                                        <table class="table table-hover mb-0">
-                                                            <thead class="table-light">
-                                                                <tr>
-                                                                    <th>Service Point</th>
-                                                                    <th class="text-center">Served</th>
-                                                                    <th class="text-center">Avg Wait</th>
-                                                                    <th class="text-center">Avg Service</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                        `;
+                                                        <div class="card border-secondary mb-4">
+                                                            <div class="card-header bg-light">
+                                                                <h6 class="mb-0"><i class="fas fa-clinic-medical me-2"></i>Service Point Performance</h6>
+                                                            </div>
+                                                            <div class="card-body p-0">
+                                                                <div class="table-responsive">
+                                                                    <table class="table table-hover mb-0">
+                                                                        <thead class="table-light">
+                                                                            <tr>
+                                                                                <th>Service Point</th>
+                                                                                <th class="text-center">Served</th>
+                                                                                <th class="text-center">Avg Wait</th>
+                                                                                <th class="text-center">Avg Service</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                    `;
 
                     activeServicePoints.forEach(sp => {
                         html += `
-                                                <tr>
-                                                    <td><strong>${sp.servicePointName}</strong></td>
-                                                    <td class="text-center">${sp.customersServed}</td>
-                                                    <td class="text-center">${sp.averageWaitTimeMinutes.toFixed(1)} min</td>
-                                                    <td class="text-center">${sp.averageServiceTimeMinutes.toFixed(1)} min</td>
-                                                </tr>
-                                            `;
+                                                            <tr>
+                                                                <td><strong>${sp.servicePointName}</strong></td>
+                                                                <td class="text-center">${sp.customersServed}</td>
+                                                                <td class="text-center">${sp.averageWaitTimeMinutes.toFixed(1)} min</td>
+                                                                <td class="text-center">${sp.averageServiceTimeMinutes.toFixed(1)} min</td>
+                                                            </tr>
+                                                        `;
                     });
 
                     html += `
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        `;
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    `;
                 }
             }
 
@@ -316,44 +316,44 @@
                 const activeStaff = data.staffPerformance;
                 if (activeStaff.length > 0) {
                     html += `
-                                            <div class="card border-secondary">
-                                                <div class="card-header bg-light">
-                                                    <h6 class="mb-0"><i class="fas fa-user-md me-2"></i>Staff Performance</h6>
-                                                </div>
-                                                <div class="card-body p-0">
-                                                    <div class="table-responsive">
-                                                        <table class="table table-hover mb-0">
-                                                            <thead class="table-light">
-                                                                <tr>
-                                                                    <th>Staff Member</th>
-                                                                    <th>Service Point</th>
-                                                                    <th class="text-center">Served</th>
-                                                                    <th class="text-center">Avg Wait</th>
-                                                                    <th class="text-center">Avg Service</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                        `;
+                                                        <div class="card border-secondary">
+                                                            <div class="card-header bg-light">
+                                                                <h6 class="mb-0"><i class="fas fa-user-md me-2"></i>Staff Performance</h6>
+                                                            </div>
+                                                            <div class="card-body p-0">
+                                                                <div class="table-responsive">
+                                                                    <table class="table table-hover mb-0">
+                                                                        <thead class="table-light">
+                                                                            <tr>
+                                                                                <th>Staff Member</th>
+                                                                                <th>Service Point</th>
+                                                                                <th class="text-center">Served</th>
+                                                                                <th class="text-center">Avg Wait</th>
+                                                                                <th class="text-center">Avg Service</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                    `;
 
                     activeStaff.forEach(staff => {
                         html += `
-                                                <tr>
-                                                    <td><strong>${staff.staffName}</strong></td>
-                                                    <td>${staff.servicePointName}</td>
-                                                    <td class="text-center">${staff.customersServed}</td>
-                                                    <td class="text-center">${staff.averageWaitTimeMinutes.toFixed(1)} min</td>
-                                                    <td class="text-center">${staff.averageServiceTimeMinutes.toFixed(1)} min</td>
-                                                </tr>
-                                            `;
+                                                            <tr>
+                                                                <td><strong>${staff.staffName}</strong></td>
+                                                                <td>${staff.servicePointName}</td>
+                                                                <td class="text-center">${staff.customersServed}</td>
+                                                                <td class="text-center">${staff.averageWaitTimeMinutes.toFixed(1)} min</td>
+                                                                <td class="text-center">${staff.averageServiceTimeMinutes.toFixed(1)} min</td>
+                                                            </tr>
+                                                        `;
                     });
 
                     html += `
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        `;
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    `;
                 }
             }
 
@@ -435,122 +435,79 @@
 
         // Print report
         function printReport() {
-            if (!currentReportData) {
+            if (!currentReportData || !currentStartDate || !currentEndDate) {
                 alert('No report data available to print');
                 return;
             }
 
-            // Open print window
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                                    <html>
-                                    <head>
-                                        <title>Queue Management System - Analytical Report</title>
-                                        <style>
-                                            body { font-family: Arial, sans-serif; margin: 20px; }
-                                            .report-header { text-align: center; margin-bottom: 30px; }
-                                            .report-header h1 { color: #2c3e50; margin-bottom: 5px; }
-                                            .report-header h2 { color: #3498db; margin-bottom: 10px; }
-                                            .summary { margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 5px; }
-                                            .summary h3 { margin-top: 0; }
-                                            .table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                                            .table th { background: #2c3e50; color: white; padding: 10px; text-align: left; }
-                                            .table td { padding: 10px; border-bottom: 1px solid #ddd; }
-                                            .section { margin: 40px 0; }
-                                            .section h3 { border-bottom: 2px solid #3498db; padding-bottom: 5px; }
-                                            @@media print {
-                                                .no-print { display: none; }
-                                                body { margin: 0; }
-                                            }
-                                        </style>
-                                    </head>
-                                    <body>
-                                        <div class="report-header">
-                                            <h1>QUEUE MANAGEMENT SYSTEM</h1>
-                                            <h2>ANALYTICAL REPORT</h2>
-                                            <p>${formatDisplayDate(currentStartDate)} - ${formatDisplayDate(currentEndDate)}</p>
-                                        </div>
+            const printBtn = $('#actionButtons button:last');
+            const originalHtml = printBtn.html();
 
-                                        <div class="summary">
-                                            <h3>Overall Summary</h3>
-                                            <p><strong>Total Customers Served:</strong> ${currentReportData.totalCustomersServed}</p>
-                                            <p><strong>Average Wait Time:</strong> ${currentReportData.overallAverageWaitTimeMinutes.toFixed(1)} minutes</p>
-                                            <p><strong>Average Service Time:</strong> ${currentReportData.overallAverageServiceTimeMinutes.toFixed(1)} minutes</p>
-                                        </div>
-                                `);
+            // Disable button and show processing
+            printBtn.prop('disabled', true)
+                .css('opacity', '0.7')
+                .html('<i class="fas fa-spinner fa-spin me-1"></i>Processing...');
 
-            // Add service point table
-            const activeServicePoints = currentReportData.servicePointPerformance?.filter(sp => sp.customersServed > 0);
-            if (activeServicePoints && activeServicePoints.length > 0) {
-                printWindow.document.write(`
-                                        <div class="section">
-                                            <h3>Service Point Performance</h3>
-                                            <table class="table">
-                                                <tr>
-                                                    <th>Service Point</th>
-                                                    <th>Served</th>
-                                                    <th>Avg Wait (min)</th>
-                                                    <th>Avg Service (min)</th>
-                                                </tr>
-                                    `);
+            const requestData = {
+                startDate: currentStartDate,
+                endDate: currentEndDate,
+                reportData: currentReportData
+            };
 
-                activeServicePoints.forEach(sp => {
+            $.ajax({
+                url: '/Admin/GenerateReport',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(requestData),
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (blob) {
+                    // Create PDF URL
+                    const url = window.URL.createObjectURL(blob);
+
+                    // IMPORTANT: Open window FIRST to avoid pop-up blockers
+                    const printWindow = window.open();
+
+                    if (!printWindow) {
+                        alert('Please allow pop-ups for this site to print');
+                        printBtn.prop('disabled', false)
+                            .css('opacity', '1')
+                            .html(originalHtml);
+                        return;
+                    }
+
+                    // Write PDF content to the window
                     printWindow.document.write(`
-                                            <tr>
-                                                <td>${sp.servicePointName}</td>
-                                                <td>${sp.customersServed}</td>
-                                                <td>${sp.averageWaitTimeMinutes.toFixed(1)}</td>
-                                                <td>${sp.averageServiceTimeMinutes.toFixed(1)}</td>
-                                            </tr>
-                                        `);
-                });
+                    <html>
+                        <head><title>Print Report</title></head>
+                        <body style="margin: 0; padding: 0;">
+                            <iframe src="${url}" style="width: 100%; height: 100vh; border: none;"
+                                    onload="this.contentWindow.focus(); this.contentWindow.print();">
+                            </iframe>
+                        </body>
+                    </html>
+                `);
 
-                printWindow.document.write('</table></div>');
-            }
+                    printWindow.document.close();
 
-            // Add staff table
-            const activeStaff = currentReportData.staffPerformance?.filter(staff => staff.customersServed > 0);
-            if (activeStaff && activeStaff.length > 0) {
-                printWindow.document.write(`
-                                        <div class="section">
-                                            <h3>Staff Performance</h3>
-                                            <table class="table">
-                                                <tr>
-                                                    <th>Staff Member</th>
-                                                    <th>Service Point</th>
-                                                    <th>Served</th>
-                                                    <th>Avg Wait (min)</th>
-                                                    <th>Avg Service (min)</th>
-                                                </tr>
-                                    `);
+                    // Re-enable button
+                    printBtn.prop('disabled', false)
+                        .css('opacity', '1')
+                        .html(originalHtml);
+                },
+                error: function (xhr) {
+                    alert('Error generating PDF for printing: ' + (xhr.responseJSON?.error || 'Unknown error'));
 
-                activeStaff.forEach(staff => {
-                    printWindow.document.write(`
-                                            <tr>
-                                                <td>${staff.staffName}</td>
-                                                <td>${staff.servicePointName}</td>
-                                                <td>${staff.customersServed}</td>
-                                                <td>${staff.averageWaitTimeMinutes.toFixed(1)}</td>
-                                                <td>${staff.averageServiceTimeMinutes.toFixed(1)}</td>
-                                            </tr>
-                                        `);
-                });
-
-                printWindow.document.write('</table></div>');
-            }
-
-            printWindow.document.write(`
-                                        <div class="no-print" style="margin-top: 40px; text-align: center;">
-                                            <button onclick="window.print()" style="padding: 10px 20px; background: #3498db; color: white; border: none; cursor: pointer;">
-                                                Print Report
-                                            </button>
-                                        </div>
-                                    </body>
-                                    </html>
-                                `);
-
-            printWindow.document.close();
-            printWindow.focus();
+                    // Re-enable button
+                    printBtn.prop('disabled', false)
+                        .css('opacity', '1')
+                        .html(originalHtml);
+                }
+            });
         }
     </script>
 
