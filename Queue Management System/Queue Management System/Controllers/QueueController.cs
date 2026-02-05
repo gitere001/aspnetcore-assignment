@@ -57,6 +57,32 @@ namespace Queue_Management_System.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> MarkAsAnnounced([FromBody] MarkAsAnnouncedRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.TicketNumber))
+                {
+                    return BadRequest(new { error = "Ticket number is required" });
+                }
+
+                var success = await _ticketRepository.UpdateAnnouncementStatus(request.TicketNumber, false);
+
+                return Json(new { success });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking ticket as announced");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        public class MarkAsAnnouncedRequest
+        {
+            public string TicketNumber { get; set; } = string.Empty;
+        }
+
 
     }
 }

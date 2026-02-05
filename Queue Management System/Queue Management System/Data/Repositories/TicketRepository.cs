@@ -160,7 +160,7 @@ namespace Queue_Management_System.Data.Repositories
                 JOIN service_points sp ON sp.service_id = t.service_id
                 WHERE sp.id = @servicePointId
                   AND t.status = 'Waiting'
-                  AND t.service_point_id IS NULL
+                  AND (t.service_point_id IS NULL OR t.service_point_id = @servicePointId)
                 ORDER BY t.created_at ASC
                 LIMIT 1
                 FOR UPDATE SKIP LOCKED
@@ -170,7 +170,8 @@ namespace Queue_Management_System.Data.Repositories
                 service_point_id = @servicePointId,
                 called_at = NOW(),
                 served_by_user_id = @staffUserId,
-                waiting_time_seconds = EXTRACT(EPOCH FROM (NOW() - t.created_at))
+                waiting_time_seconds = EXTRACT(EPOCH FROM (NOW() - t.created_at)),
+                has_announcement = true
             FROM next_ticket nt
             WHERE t.id = nt.id
             RETURNING t.ticket_number;
@@ -235,6 +236,7 @@ namespace Queue_Management_System.Data.Repositories
         {
             public string TicketNumber { get; set; } = string.Empty;
             public int? ServicePointId { get; set; }
+            public bool HasAnnouncement { get; set; }
         }
 
         public async Task<List<CalledTicketDto>> GetCalledTickets()
@@ -242,7 +244,8 @@ namespace Queue_Management_System.Data.Repositories
             var sql = @"
         SELECT
             t.ticket_number,
-            t.service_point_id
+            t.service_point_id,
+            t.has_announcement
         FROM tickets t
         WHERE t.status = 'Called'
         ORDER BY t.called_at ASC;
@@ -252,7 +255,8 @@ namespace Queue_Management_System.Data.Repositories
                 reader => new CalledTicketDto
                 {
                     TicketNumber = reader.GetString(0),
-                    ServicePointId = reader.IsDBNull(1) ? null : reader.GetInt32(1)
+                    ServicePointId = reader.IsDBNull(1) ? null : reader.GetInt32(1),
+                    HasAnnouncement = reader.GetBoolean(2)
                 });
         }
 
@@ -348,5 +352,22 @@ namespace Queue_Management_System.Data.Repositories
                 throw;
             }
         }
+
+        public async Task<bool> UpdateAnnouncementStatus(string ticketNumber, bool hasAnnouncement)
+        {
+            var sql = @"
+        UPDATE tickets
+        SET has_announcement = @hasAnnouncement
+        WHERE ticket_number = @ticketNumber
+          AND status = 'Called';
+        ";
+
+            var rowsAffected = await _db.ExecuteNonQueryWithResultAsync(sql,
+                new NpgsqlParameter("@ticketNumber", ticketNumber),
+                new NpgsqlParameter("@hasAnnouncement", hasAnnouncement));
+
+            return rowsAffected > 0;
+        }
+
     }
 }

@@ -28,5 +28,6 @@ namespace Queue_Management_System.Models
         public int? ServiceTimeSeconds { get; set; } // FinishedAt - CalledAt
         public int? ServedByUserId { get; set; } // Which staff member served the ticket
         public string? ServedByUsername { get; set; } // Staff username who served the ticket
+        public bool HasAnnouncement { get; set; } = false; // Flag for waiting page voice announcement
     }
 }

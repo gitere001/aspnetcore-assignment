@@ -4,6 +4,7 @@
 }
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -19,6 +20,7 @@
     <!-- Local CSS -->
     <link rel="stylesheet" href="~/css/waiting.css">
 </head>
+
 <body>
     <!-- Voice Enable Modal -->
     <div class="voice-modal-overlay" id="voiceModal">
@@ -109,11 +111,6 @@
             testUtterance.onend = () => {
                 // Mark as enabled
                 voiceManager.setEnabled();
-
-                // If there are tickets waiting, start announcements
-                if (state.initialized && Object.keys(state.tickets).length > 0 && !state.speaking) {
-                    announceNext();
-                }
             };
 
             testUtterance.onerror = (e) => {
@@ -128,9 +125,8 @@
 
         // ── State ──────────────────────────────────────────
         const state = {
-            tickets: {},        // { ticketNumber: { servicePointId, callCount, addedAt } }
-            speaking: false,    // is voice currently active?
-            initialized: false  // first fetch done? (don't speak on page load)
+            initialized: false,  // first fetch done? (don't speak on page load)
+            isSpeaking: false    // speaking lock to prevent race conditions
         };
 
         // ── Voice Setup ────────────────────────────────────
@@ -196,100 +192,96 @@
             }, 150);
         }
 
-        // ── Call Queue Engine ──────────────────────────────
-        // Returns the next ticket to announce:
-        //   Priority 1 → lowest callCount
-        //   Priority 2 → earliest addedAt (FIFO)
-        function getNextTicket() {
-            const keys = Object.keys(state.tickets);
-            if (keys.length === 0) return null;
-
-            keys.sort((a, b) => {
-                const diff = state.tickets[a].callCount - state.tickets[b].callCount;
-                if (diff !== 0) return diff;
-                return state.tickets[a].addedAt - state.tickets[b].addedAt;
-            });
-
-            return keys[0];
-        }
-
-        // Announce one ticket → wait 3 sec → announce next → loop
-        function announceNext() {
-            if (state.speaking) return;
-
-            const ticketNum = getNextTicket();
-            if (!ticketNum) { state.speaking = false; return; }
-
-            state.speaking = true;
-            const ticket = state.tickets[ticketNum];
-            ticket.callCount++;
-
-            // Format ticket number for clear pronunciation
-const parts = ticketNum.split('-');
-const prefix = parts[0].split('').join(' ');
-const number = parts[1].split('').join(' ');
-const text = `Ticket number ${prefix} dash ${number}, please proceed to Service number ${ticket.servicePointId}.`;
-
-            speak(text, () => {
-                // Wait 3 seconds after speech ends, then move to next
-                setTimeout(() => {
-                    state.speaking = false;
-                    announceNext();
-                }, 3000);
-            });
+        // ── Mark As Announced ──────────────────────────────
+        async function markAsAnnounced(ticketNumber) {
+            try {
+                await fetch('/Queue/MarkAsAnnounced', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticketNumber: ticketNumber })
+                });
+                console.log(`✅ Marked ${ticketNumber} as announced`);
+            } catch (error) {
+                console.error('Error marking ticket as announced:', error);
+            }
         }
 
         // ── Fetch & Sync ───────────────────────────────────
-        function fetchTickets() {
-            fetch('/Queue/GetCalledTickets')
-                .then(response => response.json())
-                .then(data => {
-                    const incoming = data.tickets || [];
-                    syncTickets(incoming);
-                    renderTickets(incoming);
-                })
-                .catch(error => console.error('Error fetching tickets:', error));
+        async function fetchTickets() {
+            try {
+                const response = await fetch('/Queue/GetCalledTickets');
+                const data = await response.json();
+                const incoming = data.tickets || [];
+
+                await syncTickets(incoming);
+                renderTickets(incoming);
+            } catch (error) {
+                console.error('Error fetching tickets:', error);
+            }
         }
 
-        // Compare incoming vs current state — add new, remove gone
-        function syncTickets(incoming) {
-            const incomingMap = new Map(incoming.map(t => [t.ticketNumber, t]));
-
-            // Remove tickets no longer in the response
-            for (const num of Object.keys(state.tickets)) {
-                if (!incomingMap.has(num)) {
-                    delete state.tickets[num];
-                }
-            }
-
-            // Track if any brand new ticket appeared
-            let hasNew = false;
-
-            for (const ticket of incoming) {
-                if (!state.tickets[ticket.ticketNumber]) {
-                    state.tickets[ticket.ticketNumber] = {
-                        servicePointId: ticket.servicePointId,
-                        callCount: 0,
-                        addedAt: Date.now()
-                    };
-                    hasNew = true;
-                }
-            }
-
-            // First load: register silently, set callCount to 1 so loop starts fair
+        // Compare incoming vs current state — announce only hasAnnouncement = true
+        async function syncTickets(incoming) {
+            // First load: just mark as initialized, don't announce
             if (!state.initialized) {
                 state.initialized = true;
-                for (const num of Object.keys(state.tickets)) {
-                    state.tickets[num].callCount = 1;
-                }
+                console.log('📋 First load - skipping announcements');
                 return;
             }
 
-            // New ticket arrived → kick off the loop (it will auto-continue)
-            // Only announce if voice is enabled
-            if (hasNew && !state.speaking && voiceManager.isEnabled()) {
-                announceNext();
+            // Check if already speaking - prevent race condition
+            if (state.isSpeaking) {
+                console.log('⏸️ Already speaking, skipping this poll');
+                return;
             }
+
+            // Find tickets that need announcement
+            const needsAnnouncement = incoming.filter(t => t.hasAnnouncement === true);
+
+            if (needsAnnouncement.length === 0) {
+                return;
+            }
+
+            console.log(`📢 Found ${needsAnnouncement.length} ticket(s) to announce`);
+
+            // Only announce if voice is enabled
+            if (!voiceManager.isEnabled()) {
+                console.log('⚠️ Voice not enabled, skipping announcements');
+                return;
+            }
+
+            // Lock speaking to prevent duplicate announcements
+            state.isSpeaking = true;
+
+            // Announce each ticket sequentially
+            for (const ticket of needsAnnouncement) {
+                await announceTicket(ticket);
+                // Mark as announced immediately after speaking
+                await markAsAnnounced(ticket.ticketNumber);
+            }
+
+            // Unlock after all announcements complete
+            state.isSpeaking = false;
+            console.log('🔓 Speaking lock released');
+        }
+
+        // Announce a single ticket
+        function announceTicket(ticket) {
+            return new Promise((resolve) => {
+                // Format ticket number for clear pronunciation
+                const parts = ticket.ticketNumber.split('-');
+                const prefix = parts[0].split('').join(' ');
+                const number = parts[1].split('').join(' ');
+                const text = `Ticket number ${prefix} dash ${number}, please proceed to Service number ${ticket.servicePointId}.`;
+
+                console.log(`🔊 Announcing: ${ticket.ticketNumber}`);
+
+                speak(text, () => {
+                    console.log(`✅ Finished announcing: ${ticket.ticketNumber}`);
+                    // Wait 2 seconds before next announcement
+                    setTimeout(resolve, 2000);
+                });
+            });
         }
 
         // ── Render ─────────────────────────────────────────
@@ -332,10 +324,11 @@ const text = `Ticket number ${prefix} dash ${number}, please proceed to Service 
 
         // Then start fetching tickets
         fetchTickets();
-        setInterval(fetchTickets, 5000);
+        setInterval(fetchTickets, 3000);
 
         // Page refresh every 30 min to stay clean
         setTimeout(() => window.location.reload(), 30 * 60 * 1000);
     </script>
 </body>
+
 </html>

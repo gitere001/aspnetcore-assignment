@@ -471,6 +471,51 @@ namespace Queue_Management_System.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> RecallTicket([FromBody] RecallTicketRequest request)
+        {
+            try
+            {
+                // Get user ID from claims
+                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return Unauthorized(new { error = "Not authenticated" });
+                }
+
+                // Validate request
+                if (string.IsNullOrEmpty(request.TicketNumber))
+                {
+                    return BadRequest(new { error = "Ticket number is required" });
+                }
+
+                // Toggle announcement flag
+                var success = await _ticketRepository.UpdateAnnouncementStatus(request.TicketNumber, true);
+
+                if (!success)
+                {
+                    return Json(new { success = false, message = "Ticket not found or not in Called status" });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"Ticket {request.TicketNumber} recalled",
+                    ticketNumber = request.TicketNumber
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error recalling ticket");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        public class RecallTicketRequest
+        {
+            public string TicketNumber { get; set; } = string.Empty;
+        }
+
 
 
     }
