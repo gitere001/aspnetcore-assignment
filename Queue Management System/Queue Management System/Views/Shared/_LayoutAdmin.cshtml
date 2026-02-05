@@ -392,9 +392,9 @@
 						<div class="fw-medium">Admin User</div>
 						<div class="text-muted small">Administrator</div>
 					</div>
-					<a class="dropdown-item" href="@Url.Action("Settings", "Admin")">
+					@* <a class="dropdown-item" href="@Url.Action("Settings", "Admin")">
 						<i class="fas fa-cog me-2"></i>Settings
-					</a>
+					</a> *@
 					<form method="post" action="@Url.Action("Logout", "Auth")" style="display: inline;">
 						@Html.AntiForgeryToken()
 						<button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-start">
