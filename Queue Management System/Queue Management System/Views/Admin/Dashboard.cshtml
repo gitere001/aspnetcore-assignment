@@ -33,9 +33,11 @@
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total Served Today
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalServed">@Model.TotalServed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalServed">@Model.TotalServed
+                            </div>
                             <div class="mt-2 mb-0 text-muted text-xs">
-                                <span id="servedChange" class="@(Model.ServedVsYesterday >= 0 ? "text-success" : "text-danger") me-2">
+                                <span id="servedChange"
+                                      class="@(Model.ServedVsYesterday >= 0 ? "text-success" : "text-danger") me-2">
                                     <i class="fas fa-arrow-@(Model.ServedVsYesterday >= 0 ? "up" : "down") me-1"></i>
                                     @Math.Abs(Model.ServedVsYesterday)%
                                 </span>
@@ -63,185 +65,190 @@
                                 @Model.AverageWaitTime min
                             </div>
                             <div class="mt-2 mb-0 text-muted text-xs">
-                                <span class="text-nowrap">Currently waiting: <span id="customersWaiting" class="fw-bold">@Model.CustomersWaiting</span></span>
+                                <span class="text-nowrap">Currently waiting: <span id="customersWaiting"
+                                                                                       class="fw-bold">@Model.CustomersWaiting</span></span>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-gray-300"></i>
                             </div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Efficiency -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Service Efficiency
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="serviceEfficiency">
+                                    @Model.ServiceEfficiency%
+                                </div>
+                                <div class="mt-2 mb-0 text-muted text-xs">
+                                    <span>Finished vs Called tickets</span>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Service Points -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    Active Service Points
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="activePoints">
+                                    @Model.ActiveServicePoints
+                                </div>
+                                <div class="mt-2 mb-0 text-muted text-xs">
+                                    <span>Total counters available</span>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-store fa-2x text-gray-300"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Service Efficiency -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Service Efficiency
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="serviceEfficiency">
-                                @Model.ServiceEfficiency%
-                            </div>
-                            <div class="mt-2 mb-0 text-muted text-xs">
-                                <span>Finished vs Called tickets</span>
-                            </div>
+        <!-- Charts Row -->
+        <div class="row">
+            <!-- Tickets by Service (Pie Chart) -->
+            <div class="col-xl-6 col-lg-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Tickets by Service</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-pie pt-4">
+                            <canvas id="servicePieChart" height="300"></canvas>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hourly Tickets (Bar Chart) -->
+            <div class="col-xl-6 col-lg-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Hourly Ticket Activity</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-bar pt-4">
+                            <canvas id="hourlyBarChart" height="300"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Active Service Points -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Active Service Points
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="activePoints">
-                                @Model.ActiveServicePoints
-                            </div>
-                            <div class="mt-2 mb-0 text-muted text-xs">
-                                <span>Total counters available</span>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-store fa-2x text-gray-300"></i>
-                        </div>
+        <!-- Performance Metrics Row -->
+        <div class="row">
+            <!-- Fastest Service Point -->
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-success">Fastest Service Point</h6>
+                    </div>
+                    <div class="card-body text-center py-4">
+                        <i class="fas fa-bolt text-success fa-3x mb-3"></i>
+                        <h4 class="font-weight-bold" id="fastestServicePoint">
+                            @Model.FastestServicePoint.Name
+                        </h4>
+                        <p class="text-muted mb-0">
+                            Avg. service time: <span id="fastestTime">@Model.FastestServicePoint.AvgServiceTime</span> min
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Most Active Staff -->
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Most Active Staff</h6>
+                    </div>
+                    <div class="card-body text-center py-4">
+                        <i class="fas fa-user-tie text-primary fa-3x mb-3"></i>
+                        <h4 class="font-weight-bold" id="mostActiveStaff">
+                            @Model.MostActiveStaff.Name
+                        </h4>
+                        <p class="text-muted mb-0">
+                            Tickets served: <span id="staffTickets">@Model.MostActiveStaff.TicketsServed</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Busiest Service -->
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-warning">Busiest Service</h6>
+                    </div>
+                    <div class="card-body text-center py-4">
+                        <i class="fas fa-fire text-warning fa-3x mb-3"></i>
+                        <h4 class="font-weight-bold" id="busiestService">
+                            @Model.BusiestService.Name
+                        </h4>
+                        <p class="text-muted mb-0">
+                            Total tickets: <span id="serviceTickets">@Model.BusiestService.TicketCount</span>
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Charts Row -->
-    <div class="row">
-        <!-- Tickets by Service (Pie Chart) -->
-        <div class="col-xl-6 col-lg-6 mb-4">
-            <div class="card shadow h-100">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Tickets by Service</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-pie pt-4">
-                        <canvas id="servicePieChart" height="300"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Add these script references in your Layout or here -->
+    @section Scripts {
+        <!-- Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        <!-- Hourly Tickets (Bar Chart) -->
-        <div class="col-xl-6 col-lg-6 mb-4">
-            <div class="card shadow h-100">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Hourly Ticket Activity</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-bar pt-4">
-                        <canvas id="hourlyBarChart" height="300"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+        <script>
 
-    <!-- Performance Metrics Row -->
-    <div class="row">
-        <!-- Fastest Service Point -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-success">Fastest Service Point</h6>
-                </div>
-                <div class="card-body text-center py-4">
-                    <i class="fas fa-bolt text-success fa-3x mb-3"></i>
-                    <h4 class="font-weight-bold" id="fastestServicePoint">
-                        @Model.FastestServicePoint.Name
-                    </h4>
-                    <p class="text-muted mb-0">
-                        Avg. service time: <span id="fastestTime">@Model.FastestServicePoint.AvgServiceTime</span> min
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Most Active Staff -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Most Active Staff</h6>
-                </div>
-                <div class="card-body text-center py-4">
-                    <i class="fas fa-user-tie text-primary fa-3x mb-3"></i>
-                    <h4 class="font-weight-bold" id="mostActiveStaff">
-                        @Model.MostActiveStaff.Name
-                    </h4>
-                    <p class="text-muted mb-0">
-                        Tickets served: <span id="staffTickets">@Model.MostActiveStaff.TicketsServed</span>
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Busiest Service -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-warning">Busiest Service</h6>
-                </div>
-                <div class="card-body text-center py-4">
-                    <i class="fas fa-fire text-warning fa-3x mb-3"></i>
-                    <h4 class="font-weight-bold" id="busiestService">
-                        @Model.BusiestService.Name
-                    </h4>
-                    <p class="text-muted mb-0">
-                        Total tickets: <span id="serviceTickets">@Model.BusiestService.TicketCount</span>
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add these script references in your Layout or here -->
-@section Scripts {
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script>
-        // Initialize dashboard
-        $(document).ready(function() {
+            // Global chart variables
+            let servicePieChart = null;
+            let hourlyBarChart = null;
+            // Initialize dashboard
+            $(document).ready(function () {
             // Update current date/time
             function updateDateTime() {
-                const now = new Date();
-                const options = {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                };
-                $('#currentDateTime').text(now.toLocaleDateString('en-US', options));
+            const now = new Date();
+            const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+            };
+            $('#currentDateTime').text(now.toLocaleDateString('en-US', options));
             }
 
             updateDateTime();
             setInterval(updateDateTime, 60000); // Update every minute
 
             // Refresh button
-            $('#refreshBtn').click(function() {
-                $(this).addClass('fa-spin');
-                loadDashboardData();
-                setTimeout(() => $(this).removeClass('fa-spin'), 1000);
+            $('#refreshBtn').click(function () {
+            $(this).addClass('fa-spin');
+            loadDashboardData();
+            setTimeout(() => $(this).removeClass('fa-spin'), 1000);
             });
 
             // Initialize charts
@@ -249,9 +256,9 @@
 
             // Auto-refresh every 30 seconds
             setInterval(loadDashboardData, 30000);
-        });
+            });
 
-        function initializeCharts() {
+            function initializeCharts() {
             // Pie Chart - Tickets by Service
             const pieCtx = document.getElementById('servicePieChart').getContext('2d');
 
@@ -260,41 +267,41 @@
             const serviceLabels = @Html.Raw(Json.Serialize(Model.TicketsByService.Select(t => t.ServiceName)));
             const serviceData = @Html.Raw(Json.Serialize(Model.TicketsByService.Select(t => t.TicketCount)));
 
-            new Chart(pieCtx, {
-                type: 'pie',
-                data: {
-                    labels: serviceLabels,
-                    datasets: [{
-                        data: serviceData,
-                        backgroundColor: serviceColors,
-                        borderWidth: 1,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} tickets (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
+            servicePieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+            labels: serviceLabels,
+            datasets: [{
+            data: serviceData,
+            backgroundColor: serviceColors,
+            borderWidth: 1,
+            borderColor: '#fff'
+            }]
+            },
+            options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+            legend: {
+            position: 'right',
+            labels: {
+            padding: 20,
+            usePointStyle: true
+            }
+            },
+            tooltip: {
+            callbacks: {
+            label: function (context) {
+            const label = context.label || '';
+            const value = context.raw || 0;
+            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+            const percentage = Math.round((value / total) * 100);
+            return `${label}: ${value} tickets (${percentage}%)`;
+            }
+            }
+            }
+            }
+            }
             });
 
             // Bar Chart - Hourly Tickets
@@ -302,79 +309,103 @@
 
             const hourlyLabels = @Html.Raw(Json.Serialize(Model.HourlyTickets.Select(h => h.Hour)));
             const servedData = @Html.Raw(Json.Serialize(Model.HourlyTickets.Select(h => h.Served)));
-            const waitingData = @Html.Raw(Json.Serialize(Model.HourlyTickets.Select(h => h.Waiting)));
-
-            new Chart(barCtx, {
-                type: 'bar',
-                data: {
-                    labels: hourlyLabels,
-                    datasets: [
-                        {
-                            label: 'Served',
-                            data: servedData,
-                            backgroundColor: 'rgba(13, 110, 253, 0.8)',
-                            borderColor: 'rgba(13, 110, 253, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Waiting',
-                            data: waitingData,
-                            backgroundColor: 'rgba(253, 126, 20, 0.8)',
-                            borderColor: 'rgba(253, 126, 20, 1)',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    }
-                }
-            });
-        }
-
-        async function loadDashboardData() {
-            try {
-                const response = await fetch('@Url.Action("GetDashboardStats", "Admin")');
-                const stats = await response.json();
-
-                if (stats.success) {
-                    // Update stat cards
-                    $('#totalServed').text(stats.totalServed);
-                    $('#avgWaitTime').text(stats.averageWaitTime + ' min');
-                    $('#serviceEfficiency').text(stats.serviceEfficiency + '%');
-                    $('#activePoints').text(stats.activeServicePoints);
-                    $('#customersWaiting').text(stats.customersWaiting);
-
-                    // Update change indicators
-                    const servedChange = $('#servedChange');
-                    servedChange.removeClass('text-success text-danger');
-                    servedChange.addClass(stats.servedVsYesterday >= 0 ? 'text-success' : 'text-danger');
-                    servedChange.html(`<i class="fas fa-arrow-${stats.servedVsYesterday >= 0 ? 'up' : 'down'} me-1"></i>${Math.abs(stats.servedVsYesterday)}%`);
-
-                    // Update performance metrics
-                    $('#fastestServicePoint').text(stats.fastestServicePoint.name);
-                    $('#fastestTime').text(stats.fastestServicePoint.avgServiceTime);
-                    $('#mostActiveStaff').text(stats.mostActiveStaff.name);
-                    $('#staffTickets').text(stats.mostActiveStaff.ticketsServed);
-                    $('#busiestService').text(stats.busiestService.name);
-                    $('#serviceTickets').text(stats.busiestService.ticketCount);
-                }
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
+            @* const waitingData = @Html.Raw(Json.Serialize(Model.HourlyTickets.Select(h => h.Waiting))); *@
+            const waitingData = @Html.Raw(Json.Serialize(Model.HourlyTickets.Select(h => h.NoShow)));
+            hourlyBarChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+            labels: hourlyLabels,
+            datasets: [
+            {
+            label: 'Served',
+            data: servedData,
+            backgroundColor: 'rgba(13, 110, 253, 0.8)',
+            borderColor: 'rgba(13, 110, 253, 1)',
+            borderWidth: 1
+            },
+            {
+            label: 'No Show',
+            data: waitingData,
+            backgroundColor: 'rgba(253, 126, 20, 0.8)',
+            borderColor: 'rgba(253, 126, 20, 1)',
+            borderWidth: 1
             }
-        }
-    </script>
+            ]
+            },
+            options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+            y: {
+            beginAtZero: true,
+            ticks: {
+            precision: 0
+            }
+            }
+            },
+            plugins: {
+            legend: {
+            position: 'top',
+            }
+            }
+            }
+            });
+            }
+
+            async function loadDashboardData() {
+    try {
+        const response = await fetch('@Url.Action("GetDashboardStats", "Admin")');
+        const stats = await response.json();
+
+        if (stats.success) {
+            // Update stat cards
+            $('#totalServed').text(stats.totalServed);
+            $('#avgWaitTime').text(stats.averageWaitTime + ' min');
+            $('#serviceEfficiency').text(stats.serviceEfficiency + '%');
+            $('#activePoints').text(stats.activeServicePoints);
+            $('#customersWaiting').text(stats.customersWaiting);
+
+            // Update change indicators
+            const servedChange = $('#servedChange');
+            servedChange.removeClass('text-success text-danger');
+            servedChange.addClass(stats.servedVsYesterday >= 0 ? 'text-success' : 'text-danger');
+            servedChange.html(`<i class="fas fa-arrow-${stats.servedVsYesterday >= 0 ? 'up' : 'down'} me-1"></i>${Math.abs(stats.servedVsYesterday)}%`);
+
+            // Update performance metrics
+            $('#fastestServicePoint').text(stats.fastestServicePoint.name);
+            $('#fastestTime').text(stats.fastestServicePoint.avgServiceTime);
+            $('#mostActiveStaff').text(stats.mostActiveStaff.name);
+            $('#staffTickets').text(stats.mostActiveStaff.ticketsServed);
+            $('#busiestService').text(stats.busiestService.name);
+            $('#serviceTickets').text(stats.busiestService.ticketCount);
+
+            // UPDATE PIE CHART
+            if (servicePieChart) {
+                const serviceLabels = stats.ticketsByService.map(t => t.serviceName);
+                const serviceData = stats.ticketsByService.map(t => t.ticketCount);
+                const serviceColors = stats.ticketsByService.map(t => t.color);
+
+                servicePieChart.data.labels = serviceLabels;
+                servicePieChart.data.datasets[0].data = serviceData;
+                servicePieChart.data.datasets[0].backgroundColor = serviceColors;
+                servicePieChart.update();
+            }
+
+            // UPDATE BAR CHART
+            if (hourlyBarChart) {
+                const hourlyLabels = stats.hourlyTickets.map(h => h.hour);
+                const servedData = stats.hourlyTickets.map(h => h.served);
+                const noShowData = stats.hourlyTickets.map(h => h.noShow);
+
+                hourlyBarChart.data.labels = hourlyLabels;
+                hourlyBarChart.data.datasets[0].data = servedData;
+                hourlyBarChart.data.datasets[1].data = noShowData;
+                hourlyBarChart.update();
+                }
+                }
+             } catch (error) {
+        console.error('Error loading dashboard data:', error);
+    }
 }
+        </script>
+    }

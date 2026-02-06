@@ -43,13 +43,13 @@ namespace Queue_Management_System.Models
     {
         public string Hour { get; set; } = string.Empty;
         public int Served { get; set; }
-        public int Waiting { get; set; }
+        public int NoShow { get; set; }
     }
 
     public class ServicePointPerformanceDto
     {
         public string Name { get; set; } = string.Empty;
-        public int AvgServiceTime { get; set; }
+        public double AvgServiceTime { get; set; }
     }
 
     public class StaffPerformanceDto

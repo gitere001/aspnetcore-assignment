@@ -8,6 +8,9 @@ namespace Queue_Management_System.Data.Repositories
     {
         private readonly DatabaseService _db;
 
+        // Kenya Timezone: East Africa Time (EAT) = UTC+3
+        private static readonly TimeSpan KenyaOffset = TimeSpan.FromHours(3);
+
         public DashboardRepository(DatabaseService db)
         {
             _db = db;
@@ -18,11 +21,18 @@ namespace Queue_Management_System.Data.Repositories
             var stats = new DashboardStatsDto();
             stats.Timestamp = DateTime.UtcNow;
 
-            // Get date ranges with timezone consideration
-            var todayStart = date.Date.ToUniversalTime();
-            var todayEnd = date.Date.AddDays(1).AddTicks(-1).ToUniversalTime();
-            var yesterdayStart = date.Date.AddDays(-1).ToUniversalTime();
-            var yesterdayEnd = date.Date.AddTicks(-1).ToUniversalTime();
+            // Convert to Kenya time for accurate "today" calculation
+            var kenyaNow = DateTime.UtcNow.Add(KenyaOffset);
+            var kenyaToday = kenyaNow.Date;
+
+            // Get date ranges in UTC (database stores UTC)
+            // "Today" in Kenya = midnight Kenya time to now Kenya time, converted to UTC
+            var todayStart = kenyaToday.Subtract(KenyaOffset); // Kenya midnight in UTC
+            var todayEnd = kenyaNow.Subtract(KenyaOffset);     // Kenya now in UTC
+
+            // Yesterday in Kenya time
+            var yesterdayStart = kenyaToday.AddDays(-1).Subtract(KenyaOffset);
+            var yesterdayEnd = kenyaToday.AddTicks(-1).Subtract(KenyaOffset);
 
             try
             {
@@ -92,7 +102,7 @@ namespace Queue_Management_System.Data.Repositories
                         stats.AverageWaitTime = Math.Round(avgSeconds / 60.0, 1);
                     }),
 
-                    // 4. Active Service Points (FIXED - based on your actual data structure)
+                    // 4. Active Service Points
                     Task.Run(async () =>
                     {
                         var sql = @"
@@ -110,9 +120,14 @@ namespace Queue_Management_System.Data.Repositories
                         var sql = @"
                             SELECT COUNT(*)
                             FROM tickets
-                            WHERE status = 'Waiting'";
+                            WHERE status = 'Waiting'
+                            AND created_at >= @todayStart
+                            AND created_at <= @todayEnd";
 
-                        var count = await _db.ExecuteCountAsync(sql);
+                        var count = await _db.ExecuteCountAsync(sql,
+                            new NpgsqlParameter("@todayStart", todayStart),
+                            new NpgsqlParameter("@todayEnd", todayEnd)
+                        );
                         stats.CustomersWaiting = (int)count;
                     }),
 
@@ -176,35 +191,30 @@ namespace Queue_Management_System.Data.Repositories
                         }).ToList();
                     }),
 
-                    // 8. Hourly Tickets (for chart)
+                    // 8. Hourly Tickets - FIXED: Show served and noShow for TODAY's hours only (Kenya time)
                     Task.Run(async () =>
                     {
                         var sql = @"
-                            WITH hours AS (
-                                SELECT generate_series(0, 23) as hour
-                            ),
-                            served_hourly AS (
+                            WITH kenya_hours AS (
                                 SELECT
-                                    EXTRACT(HOUR FROM created_at) as hour,
-                                    COUNT(*) as served
-                                FROM tickets
-                                WHERE status = 'Finished'
-                                    AND created_at >= @todayStart
-                                    AND created_at <= @todayEnd
-                                GROUP BY EXTRACT(HOUR FROM created_at)
-                            ),
-                            waiting_now AS (
-                                SELECT COUNT(*) as waiting
-                                FROM tickets
-                                WHERE status = 'Waiting'
+                                    generate_series(
+                                        date_trunc('hour', @todayStart + INTERVAL '3 hours'),
+                                        date_trunc('hour', @todayEnd + INTERVAL '3 hours'),
+                                        interval '1 hour'
+                                    ) as hour_start
                             )
                             SELECT
-                                h.hour,
-                                COALESCE(sh.served, 0) as served,
-                                COALESCE((SELECT waiting FROM waiting_now), 0) as waiting
-                            FROM hours h
-                            LEFT JOIN served_hourly sh ON h.hour = sh.hour
-                            ORDER BY h.hour";
+                                TO_CHAR(kh.hour_start, 'HH24:MI') as hour,
+                                COALESCE(COUNT(t.id) FILTER (WHERE t.status = 'Finished'), 0) as served,
+                                COALESCE(COUNT(t.id) FILTER (WHERE t.status = 'NoShow'), 0) as noshow
+                            FROM kenya_hours kh
+                            LEFT JOIN tickets t ON
+                                date_trunc('hour', t.finished_at + INTERVAL '3 hours') = kh.hour_start
+                                AND t.finished_at >= @todayStart
+                                AND t.finished_at <= @todayEnd
+                                AND t.status IN ('Finished', 'NoShow')
+                            GROUP BY kh.hour_start
+                            ORDER BY kh.hour_start";
 
                         var hourlyData = await _db.ExecuteReaderAsync(sql,
                             new NpgsqlParameter("@todayStart", todayStart),
@@ -212,29 +222,92 @@ namespace Queue_Management_System.Data.Repositories
 
                         stats.HourlyTickets = hourlyData.Select(row => new HourlyTicketsDto
                         {
-                            Hour = $"{Convert.ToInt32(row["hour"]):00}:00",
+                            Hour = row["hour"].ToString() ?? "00:00",
                             Served = Convert.ToInt32(row["served"]),
-                            Waiting = Convert.ToInt32(row["waiting"])
+                            NoShow = Convert.ToInt32(row["noshow"])
                         }).ToList();
                     }),
 
-                    // 9. Fastest Service Point
+                    // 9. Average Wait Time Yesterday (for comparison)
                     Task.Run(async () =>
                     {
                         var sql = @"
                             SELECT
-                                sp.name as service_point_name,
-                                COALESCE(AVG(t.service_time_seconds), 0) as avg_time
+                                COALESCE(
+                                    AVG(
+                                        CASE
+                                            WHEN waiting_time_seconds > 0
+                                            THEN waiting_time_seconds
+                                            ELSE NULL
+                                        END
+                                    ),
+                                    0
+                                ) as avg_wait
+                            FROM tickets
+                            WHERE status = 'Finished'
+                            AND created_at >= @yesterdayStart
+                            AND created_at <= @yesterdayEnd";
+
+                        var avgSeconds = await _db.ExecuteScalarAsync<double>(sql,
+                            new NpgsqlParameter("@yesterdayStart", yesterdayStart),
+                            new NpgsqlParameter("@yesterdayEnd", yesterdayEnd));
+
+                        var yesterdayAvgMinutes = Math.Round(avgSeconds / 60.0, 1);
+                        stats.WaitTimeVsYesterday = yesterdayAvgMinutes > 0
+                            ? Math.Round(((stats.AverageWaitTime - yesterdayAvgMinutes) / yesterdayAvgMinutes) * 100, 1)
+                            : (stats.AverageWaitTime > 0 ? 100 : 0);
+                    }),
+
+                    // 10. Service Efficiency Yesterday (for comparison)
+                    Task.Run(async () =>
+                    {
+                        var sql = @"
+                            WITH called_tickets AS (
+                                SELECT COUNT(*) as total_called
+                                FROM tickets
+                                WHERE status IN ('Called', 'Serving', 'Finished', 'NoShow')
+                                AND created_at >= @yesterdayStart
+                                AND created_at <= @yesterdayEnd
+                            ),
+                            finished_tickets AS (
+                                SELECT COUNT(*) as total_finished
+                                FROM tickets
+                                WHERE status = 'Finished'
+                                AND created_at >= @yesterdayStart
+                                AND created_at <= @yesterdayEnd
+                            )
+                            SELECT
+                                CASE
+                                    WHEN ct.total_called > 0
+                                    THEN ROUND((ft.total_finished::decimal / ct.total_called) * 100, 1)
+                                    ELSE 0
+                                END as efficiency
+                            FROM called_tickets ct, finished_tickets ft";
+
+                        var yesterdayEfficiency = await _db.ExecuteScalarAsync<double>(sql,
+                            new NpgsqlParameter("@yesterdayStart", yesterdayStart),
+                            new NpgsqlParameter("@yesterdayEnd", yesterdayEnd));
+
+                        stats.EfficiencyVsYesterday = yesterdayEfficiency > 0
+                            ? Math.Round(((stats.ServiceEfficiency - yesterdayEfficiency) / yesterdayEfficiency) * 100, 1)
+                            : (stats.ServiceEfficiency > 0 ? 100 : 0);
+                    }),
+
+                    // 11. Fastest Service Point
+                    Task.Run(async () =>
+                    {
+                        var sql = @"
+                            SELECT
+                                sp.name,
+                                AVG(t.service_time_seconds) as avg_service_time
                             FROM service_points sp
-                            LEFT JOIN tickets t ON sp.id = t.service_point_id
-                                AND t.status = 'Finished'
+                            INNER JOIN tickets t ON sp.id = t.service_point_id
+                            WHERE t.status = 'Finished'
                                 AND t.service_time_seconds > 0
                                 AND t.created_at >= @todayStart
                                 AND t.created_at <= @todayEnd
-                            WHERE sp.is_active = true
                             GROUP BY sp.id, sp.name
-                            HAVING COUNT(t.id) > 0
-                            ORDER BY avg_time ASC
+                            ORDER BY avg_service_time ASC
                             LIMIT 1";
 
                         var fastest = await _db.ExecuteReaderAsync(sql,
@@ -245,54 +318,52 @@ namespace Queue_Management_System.Data.Repositories
                         {
                             stats.FastestServicePoint = new ServicePointPerformanceDto
                             {
-                                Name = fastest[0]["service_point_name"].ToString() ?? "N/A",
-                                AvgServiceTime = Convert.ToInt32(fastest[0]["avg_time"]) / 60 // Convert to minutes
+                                Name = fastest[0]["name"].ToString() ?? "N/A",
+                                AvgServiceTime = Math.Round(Convert.ToDouble(fastest[0]["avg_service_time"]) / 60.0, 1)
                             };
                         }
                     }),
 
-                    // 10. Most Active Staff
+                    // 12. Most Active Staff
                     Task.Run(async () =>
                     {
                         var sql = @"
                             SELECT
-                                u.username as staff_name,
+                                u.username as name,
                                 COUNT(t.id) as tickets_served
                             FROM users u
-                            LEFT JOIN tickets t ON u.id = t.served_by_user_id
-                                AND t.status = 'Finished'
+                            INNER JOIN tickets t ON u.id = t.served_by_user_id
+                            WHERE t.status = 'Finished'
                                 AND t.created_at >= @todayStart
                                 AND t.created_at <= @todayEnd
-                            WHERE u.role = 'Staff'
                             GROUP BY u.id, u.username
                             ORDER BY tickets_served DESC
                             LIMIT 1";
 
-                        var mostActive = await _db.ExecuteReaderAsync(sql,
+                        var active = await _db.ExecuteReaderAsync(sql,
                             new NpgsqlParameter("@todayStart", todayStart),
                             new NpgsqlParameter("@todayEnd", todayEnd));
 
-                        if (mostActive.Any())
+                        if (active.Any())
                         {
                             stats.MostActiveStaff = new StaffPerformanceDto
                             {
-                                Name = mostActive[0]["staff_name"].ToString() ?? "N/A",
-                                TicketsServed = Convert.ToInt32(mostActive[0]["tickets_served"])
+                                Name = active[0]["name"].ToString() ?? "N/A",
+                                TicketsServed = Convert.ToInt32(active[0]["tickets_served"])
                             };
                         }
                     }),
 
-                    // 11. Busiest Service
+                    // 13. Busiest Service
                     Task.Run(async () =>
                     {
                         var sql = @"
                             SELECT
-                                s.name as service_name,
+                                s.name,
                                 COUNT(t.id) as ticket_count
                             FROM services s
-                            LEFT JOIN tickets t ON s.id = t.service_id
-                                AND t.status IN ('Called', 'Serving', 'Finished', 'NoShow')
-                                AND t.created_at >= @todayStart
+                            INNER JOIN tickets t ON s.id = t.service_id
+                            WHERE t.created_at >= @todayStart
                                 AND t.created_at <= @todayEnd
                             GROUP BY s.id, s.name
                             ORDER BY ticket_count DESC
@@ -306,7 +377,7 @@ namespace Queue_Management_System.Data.Repositories
                         {
                             stats.BusiestService = new ServicePerformanceDto
                             {
-                                Name = busiest[0]["service_name"].ToString() ?? "N/A",
+                                Name = busiest[0]["name"].ToString() ?? "N/A",
                                 TicketCount = Convert.ToInt32(busiest[0]["ticket_count"])
                             };
                         }
